@@ -1,0 +1,11 @@
+# Common CSharp
+.vs
+bin
+obj
+*.sln
+*.user
+
+# Mod Builder
+/[Mm]ods
+/[Ii]gnore
+/[Rr]eleases

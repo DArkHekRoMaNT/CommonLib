@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net461</TargetFramework>
+		<EnableNETAnalyzers>true</EnableNETAnalyzers>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<!-- Warning settings -->
+	<PropertyGroup>
+		<WarningLevel>4</WarningLevel>
+		<!-- Disable Missing XML comment for publicly visible type or member -->
+		<NoWarn>CS1591</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Folder Include="Assets\" />
+		<Folder Include="Mods\" />
+	</ItemGroup>
+</Project>

@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<Name>CommonLib</Name>
 		<ModId>commonlib</ModId>
-		<Version>1.0.1</Version>
+		<Version>1.0.3</Version>
 		<Authors>DArkHekRoMaNT</Authors>
 		<GameVersion>1.18.0-pre.5</GameVersion>
 	</PropertyGroup>

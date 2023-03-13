@@ -22,7 +22,7 @@ namespace CommonLib.Config
         {
             logger ??= api.Logger;
 
-            var configAttr = GetAttribute<ConfigAttribute>(type);
+            var configAttr = type.GetAttribute<ConfigAttribute>();
             if (configAttr == null)
             {
                 throw new ArgumentException($"{type} is not a config");
@@ -35,7 +35,7 @@ namespace CommonLib.Config
 
             foreach (PropertyInfo prop in GetConfigItems(type))
             {
-                var attr = GetAttribute<ConfigItemAttribute>(prop);
+                var attr = prop.GetAttribute<ConfigItemAttribute>();
                 if (attr != null)
                 {
                     if (jsonConfig.TryGetValue(prop.Name, out ConfigItem<object> value))
@@ -59,7 +59,7 @@ namespace CommonLib.Config
 
         public static void SaveConfig(ICoreAPI api, Type type, object config)
         {
-            var configAttr = GetAttribute<ConfigAttribute>(type);
+            var configAttr = type.GetAttribute<ConfigAttribute>();
             if (configAttr == null)
             {
                 throw new ArgumentException($"{type} is not a config");
@@ -69,7 +69,7 @@ namespace CommonLib.Config
 
             foreach (PropertyInfo prop in GetConfigItems(type))
             {
-                var attr = GetAttribute<ConfigItemAttribute>(prop);
+                var attr = prop.GetAttribute<ConfigItemAttribute>();
                 if (attr != null)
                 {
                     var value = prop.GetValue(config);
@@ -117,7 +117,7 @@ namespace CommonLib.Config
         {
             foreach (PropertyInfo prop in GetConfigItems(type))
             {
-                var attr = GetAttribute<ConfigItemAttribute>(prop);
+                var attr = prop.GetAttribute<ConfigItemAttribute>();
                 if (attr != null)
                 {
                     if (prop.GetValue(config) is IComparable value)
@@ -146,7 +146,7 @@ namespace CommonLib.Config
             return config;
         }
 
-        private static IEnumerable<PropertyInfo> GetConfigItems(Type type)
+        public static IEnumerable<PropertyInfo> GetConfigItems(Type type)
         {
             foreach (PropertyInfo prop in type.GetProperties())
             {
@@ -157,22 +157,12 @@ namespace CommonLib.Config
             }
         }
 
-        private static T? GetAttribute<T>(PropertyInfo prop) where T : Attribute
-        {
-            return (T)Attribute.GetCustomAttribute(prop, typeof(T));
-        }
-
-        private static T? GetAttribute<T>(Type type) where T : Attribute
-        {
-            return (T)type.GetCustomAttribute(typeof(T), true);
-        }
-
         public static byte[] Serialize(object config)
         {
             var dict = new Dictionary<string, object>();
             foreach (PropertyInfo prop in config.GetType().GetProperties())
             {
-                var attr = GetAttribute<ConfigItemAttribute>(prop);
+                var attr = prop.GetAttribute<ConfigItemAttribute>();
                 if (attr != null && !attr.ClientOnly)
                 {
                     dict.Add(prop.Name, prop.GetValue(config));
@@ -188,7 +178,7 @@ namespace CommonLib.Config
             var dict = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
             foreach (PropertyInfo prop in config.GetType().GetProperties().Reverse())
             {
-                var attr = GetAttribute<ConfigItemAttribute>(prop);
+                var attr = prop.GetAttribute<ConfigItemAttribute>();
                 if (attr != null && dict.TryGetValue(prop.Name, out object value))
                 {
                     prop.SetValue(config, Convert.ChangeType(value, attr.Type));
@@ -208,7 +198,7 @@ namespace CommonLib.Config
             {
                 if (prop.Name == name)
                 {
-                    var attr = GetAttribute<ConfigItemAttribute>(prop);
+                    var attr = prop.GetAttribute<ConfigItemAttribute>();
                     if (attr != null)
                     {
                         if (attr.Converter == null)
@@ -243,7 +233,7 @@ namespace CommonLib.Config
         {
             foreach (PropertyInfo prop in type.GetProperties())
             {
-                var attr = GetAttribute<ConfigItemAttribute>(prop);
+                var attr = prop.GetAttribute<ConfigItemAttribute>();
                 if (attr != null)
                 {
                     yield return prop.Name + ": " + prop.GetValue(config);

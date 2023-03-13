@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 
 namespace CommonLib.Utils
 {
@@ -31,6 +32,16 @@ namespace CommonLib.Utils
         public static Type[] GetTypesWithAttribute<T>()
         {
             return GetTypesWithAttribute(typeof(T));
+        }
+
+        public static T? GetAttribute<T>(this Type type) where T : Attribute
+        {
+            return (T)type.GetCustomAttribute(typeof(T), true);
+        }
+
+        public static T? GetAttribute<T>(this PropertyInfo prop) where T : Attribute
+        {
+            return (T)Attribute.GetCustomAttribute(prop, typeof(T));
         }
     }
 }

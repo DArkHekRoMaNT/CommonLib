@@ -31,7 +31,7 @@ namespace CommonLib.Config
             Dictionary<string, ConfigItem<object>> jsonConfig = new();
             string filename = configAttr.Filename;
 
-            jsonConfig = api.LoadOrCreateConfig(filename, logger, jsonConfig);
+            jsonConfig = api.LoadOrCreateConfig(filename, logger, jsonConfig) ?? new();
 
             foreach (PropertyInfo prop in type.GetProperties())
             {

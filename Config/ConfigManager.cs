@@ -2,8 +2,6 @@ using CommonLib.Utils;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;

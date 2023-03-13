@@ -33,12 +33,12 @@ namespace CommonLib.Config
 
             jsonConfig = api.LoadOrCreateConfig(filename, logger, jsonConfig) ?? new();
 
-            foreach (PropertyInfo prop in type.GetProperties())
+            foreach (PropertyInfo prop in GetConfigItems(type))
             {
                 var attr = GetAttribute<ConfigItemAttribute>(prop);
                 if (attr != null)
                 {
-                    if (jsonConfig.TryGetValue(prop.Name, out var value))
+                    if (jsonConfig.TryGetValue(prop.Name, out ConfigItem<object> value))
                     {
                         prop.SetValue(config, Convert.ChangeType(value.Value, attr.Type));
                     }

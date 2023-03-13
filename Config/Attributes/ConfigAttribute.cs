@@ -24,5 +24,4 @@ namespace CommonLib.Config
             Filename = filename;
         }
     }
-
 }

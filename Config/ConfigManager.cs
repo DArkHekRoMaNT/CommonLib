@@ -2,6 +2,7 @@ using CommonLib.Utils;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
@@ -14,6 +15,10 @@ namespace CommonLib.Config
         private ICoreAPI _api = null!;
 
         public Dictionary<Type, object> Configs { get; } = new();
+        public string[] ConfigNames => Configs.Keys
+            .Select(type => type.GetAttribute<ConfigAttribute>()?.Filename!)
+            .Where(e => e != null)
+            .ToArray();
 
         public override double ExecuteOrder() => 0.001;
 
@@ -40,11 +45,6 @@ namespace CommonLib.Config
 
         public override void StartServerSide(ICoreServerAPI api)
         {
-            foreach (var key in Configs.Keys)
-            {
-                api.RegisterCommand(new ConfigServerCommand(api, key));
-            }
-
             api.Event.PlayerJoin += byPlayer =>
             {
                 foreach (var config in Configs)
@@ -52,14 +52,6 @@ namespace CommonLib.Config
                     MarkConfigDirty(config.Key);
                 }
             };
-        }
-
-        public override void StartClientSide(ICoreClientAPI api)
-        {
-            foreach (var key in Configs.Keys)
-            {
-                api.RegisterCommand(new ConfigClientCommand(api, key));
-            }
         }
 
         private void LoadAllConfigs()

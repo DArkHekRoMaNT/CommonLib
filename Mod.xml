@@ -5,6 +5,8 @@
 		<Version>1.0.3</Version>
 		<Authors>DArkHekRoMaNT</Authors>
 		<GameVersion>1.18.0-pre.5</GameVersion>
+		<RequiredOnClient>false</RequiredOnClient>
+		<RequiredOnServer>false</RequiredOnServer>
 	</PropertyGroup>
 	<ItemGroup>		
 		<!--IncludeFiles Include="modicon.png" /-->

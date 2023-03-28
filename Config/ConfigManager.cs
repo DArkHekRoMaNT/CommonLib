@@ -1,8 +1,9 @@
-using CommonLib.Utils;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
@@ -16,7 +17,7 @@ namespace CommonLib.Config
 
         public Dictionary<Type, object> Configs { get; } = new();
         public string[] ConfigNames => Configs.Keys
-            .Select(type => type.GetAttribute<ConfigAttribute>()?.Filename!)
+            .Select(type => type.GetCustomAttribute<ConfigAttribute>()?.Filename!)
             .Where(e => e != null)
             .ToArray();
 
@@ -44,13 +45,35 @@ namespace CommonLib.Config
 
             void LoadAllConfigs()
             {
-                foreach (Type type in ReflectionUtil.GetTypesWithAttribute<ConfigAttribute>())
+                foreach (Type type in GetAllTypesWithAttribute<ConfigAttribute>())
                 {
                     object config = Activator.CreateInstance(type);
                     ConfigUtil.LoadConfig(_api, type, ref config, Mod.Logger);
                     ConfigUtil.SaveConfig(_api, type, config);
                     Configs.Add(type, config);
                 }
+            }
+
+            Type[] GetAllTypesWithAttribute<T>() where T : Attribute
+            {
+                var types = new List<Type>();
+                var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                foreach (var assembly in assemblies)
+                {
+                    try
+                    {
+                        var assemblyTypes = assembly.GetExportedTypes();
+                        foreach (var type in assemblyTypes)
+                        {
+                            if (Attribute.IsDefined(type, typeof(T)))
+                            {
+                                types.Add(type);
+                            }
+                        }
+                    }
+                    catch (FileNotFoundException) { }
+                }
+                return types.ToArray();
             }
 
             void OnSyncConfigPacketReceived(SyncConfigPacket packet)
@@ -85,7 +108,7 @@ namespace CommonLib.Config
         {
             if (Configs.TryGetValue(type, out object config))
             {
-                config = ConfigUtil.CheckConfig(type, config, Mod.Logger);
+                ConfigUtil.ValidateConfig(type, ref config, Mod.Logger);
                 ConfigUtil.SaveConfig(_api, type, config);
                 if (_serverChannel != null)
                 {

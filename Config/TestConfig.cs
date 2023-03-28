@@ -28,7 +28,7 @@ namespace CommonLib.Config
     {
         public int NotUseIt { get; set; } = 100;
 
-        [ConfigValue]
+        [ConfigProperty]
         public int UseIt { get; set; } = 1;
     }
 

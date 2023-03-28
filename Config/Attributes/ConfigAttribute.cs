@@ -4,7 +4,7 @@ namespace CommonLib.Config
 {
     /// <summary>
     /// Specifies the config class. Requires parameterless ctor.
-    /// Config items are set with <see cref="ConfigValueAttribute"/>
+    /// Config items are set with <see cref="ConfigPropertyAttribute"/>
     /// and excluded with <see cref="ConfigIgnoreAttribute"/>
     /// (if <see cref="UseAllPropertiesByDefault"/>t is true).
     /// See <see cref="TestConfig"/> for more info

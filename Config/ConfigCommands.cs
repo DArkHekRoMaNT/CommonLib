@@ -33,7 +33,7 @@ namespace CommonLib.Config
             {
                 var type = configByType.Key;
                 var config = configByType.Value;
-                var configName = type.GetAttribute<ConfigAttribute>()?.Filename;
+                var configName = type.GetCustomAttribute<ConfigAttribute>()?.Filename;
 
                 if (!string.IsNullOrWhiteSpace(configName))
                 {
@@ -44,11 +44,11 @@ namespace CommonLib.Config
                     foreach (PropertyInfo prop in ConfigUtil.GetConfigProperties(type))
                     {
                         subCommand
-                                .BeginSubCommand(prop.Name)
-                                    .WithArgs(GetConventer("value", prop))
-                                    .HandleWith(args => OnSetEntry(type, prop, args))
-                                .EndSubCommand();
-                        }
+                            .BeginSubCommand(prop.Name)
+                                .WithArgs(GetConventer("value", prop))
+                                .HandleWith(args => OnSetEntry(type, prop, args))
+                            .EndSubCommand();
+                    }
 
                     command.EndSubCommand();
                 }
@@ -58,7 +58,7 @@ namespace CommonLib.Config
         private TextCommandResult OnShowConfigs(TextCommandCallingArgs args)
         {
             IEnumerable<string> names = _manager.Configs.Keys
-                .Select(type => type.GetAttribute<ConfigAttribute>()?.Filename!)
+                .Select(type => type.GetCustomAttribute<ConfigAttribute>()?.Filename!)
                 .Where(e => e != null);
 
             if (!names.Any())
@@ -72,9 +72,10 @@ namespace CommonLib.Config
         private TextCommandResult OnShowEntries(Type type)
         {
             var sb = new StringBuilder();
-            foreach (string str in ConfigUtil.GetAll(type, _manager.GetConfig(type)))
+            object config = _manager.GetConfig(type);
+            foreach (PropertyInfo prop in ConfigUtil.GetConfigProperties(type))
             {
-                sb.AppendLine(str + "");
+                sb.AppendLine(prop.Name + ": " + prop.GetValue(config));
             }
             return TextCommandResult.Success(sb.ToString());
         }
@@ -89,8 +90,8 @@ namespace CommonLib.Config
         private ICommandArgumentParser GetConventer(string name, PropertyInfo prop)
         {
             var parsers = _api.ChatCommands.Parsers;
-            var rangeAttr = prop.GetAttribute<RangeAttribute>();
-            switch (prop.GetType().Name)
+            var rangeAttr = prop.GetCustomAttribute<RangeAttribute>();
+            switch (prop.PropertyType.Name)
             {
                 case "int":
                     if (rangeAttr != null)

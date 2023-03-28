@@ -37,13 +37,13 @@ namespace CommonLib.Config
 
                 if (!string.IsNullOrWhiteSpace(configName))
                 {
-                    var subCommand = command
+                    command = command
                         .BeginSubCommand(configName)
                             .HandleWith(args => OnShowEntries(type));
 
                     foreach (PropertyInfo prop in ConfigUtil.GetConfigProperties(type))
                     {
-                        subCommand
+                        command
                             .BeginSubCommand(prop.Name)
                                 .WithArgs(GetConventer("value", prop))
                                 .HandleWith(args => OnSetEntry(type, prop, args))

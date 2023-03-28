@@ -38,7 +38,9 @@ namespace CommonLib.Config
 
         public override bool Check(IComparable value)
         {
-            return value.CompareTo(Min) >= 0 && value.CompareTo(Max) <= 0;
+            var min = (IComparable)Convert.ChangeType(Min, value.GetType());
+            var max = (IComparable)Convert.ChangeType(Max, value.GetType());
+            return value.CompareTo(min) >= 0 && value.CompareTo(max) <= 0;
         }
 
         public object ClampRange(IComparable value)

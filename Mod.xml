@@ -4,7 +4,7 @@
 		<ModId>commonlib</ModId>
 		<Version>1.0.4</Version>
 		<Authors>DArkHekRoMaNT</Authors>
-		<GameVersion>1.18.0-pre.5</GameVersion>
+		<GameVersion>1.18.0-pre.7</GameVersion>
 		<RequiredOnClient>false</RequiredOnClient>
 		<RequiredOnServer>false</RequiredOnServer>
 	</PropertyGroup>

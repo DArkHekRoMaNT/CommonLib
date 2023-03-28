@@ -1,9 +1,9 @@
 
 // Credit to Apache from Vintage Story Discord
 
+using System.Collections.Generic;
 using Vintagestory.API.Common;
 using Vintagestory.ServerMods.NoObf;
-using System.Collections.Generic;
 
 namespace CommonLib.Extensions
 {

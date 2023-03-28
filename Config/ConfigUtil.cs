@@ -22,11 +22,8 @@ namespace CommonLib.Config
         {
             logger ??= api.Logger;
 
-            var configAttr = type.GetAttribute<ConfigAttribute>();
-            if (configAttr == null)
-            {
-                throw new ArgumentException($"{type} is not a config");
-            }
+            var configAttr = type.GetAttribute<ConfigAttribute>()
+                ?? throw new ArgumentException($"{type} is not a config");
 
             Dictionary<string, ConfigItem<object>> jsonConfig = new();
             string filename = configAttr.Filename;

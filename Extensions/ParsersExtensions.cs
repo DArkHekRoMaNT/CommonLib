@@ -52,7 +52,7 @@ namespace CommonLib.Extensions
             public LongArgParser(string argName, long defaultValue, bool isMandatoryArg)
                 : base(argName, isMandatoryArg)
             {
-                this._defaultValue = defaultValue;
+                _defaultValue = defaultValue;
                 _min = long.MinValue;
                 _max = long.MaxValue;
             }

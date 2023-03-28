@@ -77,7 +77,7 @@ namespace CommonLib.Extensions
                 base.PreProcess(args);
             }
 
-            public override EnumParseResult TryProcess(TextCommandCallingArgs args, Action<AsyncParseResults> onReady = null)
+            public override EnumParseResult TryProcess(TextCommandCallingArgs args, Action<AsyncParseResults>? onReady = null)
             {
                 long? num = args.RawArgs.PopLong();
                 if (!num.HasValue)

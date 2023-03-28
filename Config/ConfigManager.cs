@@ -41,6 +41,25 @@ namespace CommonLib.Config
                     .RegisterMessageType<SyncConfigPacket>()
                     .SetMessageHandler<SyncConfigPacket>(OnSyncConfigPacketReceived);
             }
+
+            void LoadAllConfigs()
+            {
+                foreach (Type type in ReflectionUtil.GetTypesWithAttribute<ConfigAttribute>())
+                {
+                    object config = Activator.CreateInstance(type);
+                    ConfigUtil.LoadConfig(_api, type, ref config, Mod.Logger);
+                    ConfigUtil.SaveConfig(_api, type, config);
+                    Configs.Add(type, config);
+                }
+            }
+
+            void OnSyncConfigPacketReceived(SyncConfigPacket packet)
+            {
+                if (Configs.TryGetValue(packet.Type, out object config))
+                {
+                    Configs[packet.Type] = ConfigUtil.DeserializeServerPacket(config, packet.Data);
+                }
+            }
         }
 
         public override void StartServerSide(ICoreServerAPI api)
@@ -54,23 +73,11 @@ namespace CommonLib.Config
             };
         }
 
-        private void LoadAllConfigs()
-        {
-            Configs.Clear();
-            foreach (Type type in ReflectionUtil.GetTypesWithAttribute<ConfigAttribute>())
-            {
-                var config = Activator.CreateInstance(type);
-                config = ConfigUtil.LoadConfig(_api, type, config, Mod.Logger);
-                ConfigUtil.SaveConfig(_api, type, config);
-                Configs.Add(type, config);
-            }
-        }
-
         public void SaveAllConfigs(ICoreAPI api)
         {
-            foreach (var config in Configs)
+            foreach (KeyValuePair<Type, object> config in Configs)
             {
-                ConfigUtil.SaveConfig(api, config.Value);
+                ConfigUtil.SaveConfig(api, config.Key, config.Value);
             }
         }
 
@@ -78,21 +85,13 @@ namespace CommonLib.Config
         {
             if (Configs.TryGetValue(type, out object config))
             {
-                config = ConfigUtil.CheckConfig(type, config);
+                config = ConfigUtil.CheckConfig(type, config, Mod.Logger);
                 ConfigUtil.SaveConfig(_api, type, config);
                 if (_serverChannel != null)
                 {
-                    byte[] data = ConfigUtil.Serialize(config);
+                    byte[] data = ConfigUtil.SerializeServerPacket(config);
                     _serverChannel.BroadcastPacket(new SyncConfigPacket(data, config.GetType()));
                 }
-            }
-        }
-
-        private void OnSyncConfigPacketReceived(SyncConfigPacket packet)
-        {
-            if (Configs.TryGetValue(packet.Type, out object config))
-            {
-                Configs[packet.Type] = ConfigUtil.Deserialize(config, packet.Data);
             }
         }
 

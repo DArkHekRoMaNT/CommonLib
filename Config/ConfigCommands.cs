@@ -44,12 +44,12 @@ namespace CommonLib.Config
 
                     foreach (PropertyInfo prop in ConfigUtil.GetConfigItems(type))
                     {
-                        var attr = prop.GetAttribute<ConfigItemAttribute>();
+                        var attr = prop.GetAttribute<ConfigValueAttribute>();
                         if (attr != null)
                         {
                             command
                                 .BeginSubCommand(prop.Name)
-                                    .WithArgs(GetConventer("value", prop.GetType(), attr))
+                                    .WithArgs(GetConventer("value", prop))
                                     .HandleWith(args => OnSetEntry(type, prop, args))
                                 .EndSubCommand();
                         }
@@ -91,48 +91,37 @@ namespace CommonLib.Config
             return TextCommandResult.Success("done");
         }
 
-        private ICommandArgumentParser GetConventer(string name, Type type, ConfigItemAttribute attr)
+        private ICommandArgumentParser GetConventer(string name, PropertyInfo prop)
         {
             var parsers = _api.ChatCommands.Parsers;
-            switch (type.Name)
+            var rangeAttr = prop.GetAttribute<RangeAttribute>();
+            switch (prop.GetType().Name)
             {
                 case "int":
-                    int? minInt = (int?)attr.MinValue;
-                    int? maxInt = (int?)attr.MaxValue;
-
-                    if (minInt != null || maxInt != null)
+                    if (rangeAttr != null)
                     {
-                        return parsers.IntRange(name, minInt ?? int.MinValue, maxInt ?? int.MaxValue);
+                        return parsers.IntRange(name, (int)rangeAttr.Min, (int)rangeAttr.Max);
                     }
                     return parsers.Int(name);
 
                 case "long":
-                    long? minLong = (long?)attr.MinValue;
-                    long? maxLong = (long?)attr.MaxValue;
-
-                    if (minLong != null || maxLong != null)
+                    if (rangeAttr != null)
                     {
-                        return parsers.LongRange(name, minLong ?? long.MinValue, maxLong ?? long.MaxValue);
+                        return parsers.LongRange(name, (long)rangeAttr.Min, (long)rangeAttr.Max);
                     }
                     return parsers.Long(name);
 
                 case "float":
-                    float? minFloat = (float?)attr.MinValue;
-                    float? maxFloat = (float?)attr.MaxValue;
-
-                    if (minFloat != null || maxFloat != null)
+                    if (rangeAttr != null)
                     {
-                        return parsers.FloatRange(name, minFloat ?? float.MinValue, maxFloat ?? float.MaxValue);
+                        return parsers.FloatRange(name, (float)rangeAttr.Min, (float)rangeAttr.Max);
                     }
                     return parsers.Float(name);
 
                 case "double":
-                    double? minDouble = (double?)attr.MinValue;
-                    double? maxDouble = (double?)attr.MaxValue;
-
-                    if (minDouble != null || maxDouble != null)
+                    if (rangeAttr != null)
                     {
-                        return parsers.DoubleRange(name, minDouble ?? double.MinValue, maxDouble ?? double.MaxValue);
+                        return parsers.DoubleRange(name, (double)rangeAttr.Min, (double)rangeAttr.Max);
                     }
                     return parsers.Double(name);
 

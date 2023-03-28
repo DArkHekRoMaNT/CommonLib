@@ -24,7 +24,7 @@ namespace CommonLib.Config
 
         private void InitConfigCommand()
         {
-            _api.ChatCommands
+            var command = _api.ChatCommands
                 .Create("cfg")
                 .RequiresPrivilege(Privilege.controlserver)
                 .HandleWith(OnShowConfigs);
@@ -37,23 +37,18 @@ namespace CommonLib.Config
 
                 if (!string.IsNullOrWhiteSpace(configName))
                 {
-                    var command = _api.ChatCommands
-                        .GetOrCreate("cfg")
+                    var subCommand = command
                         .BeginSubCommand(configName)
                             .HandleWith(args => OnShowEntries(type));
 
-                    foreach (PropertyInfo prop in ConfigUtil.GetConfigItems(type))
+                    foreach (PropertyInfo prop in ConfigUtil.GetConfigProperties(type))
                     {
-                        var attr = prop.GetAttribute<ConfigValueAttribute>();
-                        if (attr != null)
-                        {
-                            command
+                        subCommand
                                 .BeginSubCommand(prop.Name)
                                     .WithArgs(GetConventer("value", prop))
                                     .HandleWith(args => OnSetEntry(type, prop, args))
                                 .EndSubCommand();
                         }
-                    }
 
                     command.EndSubCommand();
                 }

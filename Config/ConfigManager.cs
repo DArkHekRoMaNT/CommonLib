@@ -103,7 +103,11 @@ namespace CommonLib.Config
 
         public object GetConfig(Type type)
         {
-            return Configs[type];
+            if (Configs.TryGetValue(type, out object value))
+            {
+                return value;
+            }
+            throw new KeyNotFoundException("Unknown config type: " + type.FullName);
         }
 
         [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]

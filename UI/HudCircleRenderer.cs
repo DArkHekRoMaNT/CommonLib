@@ -110,15 +110,11 @@ namespace CommonLib.UI
                 y = Api.Input.MouseY;
             }
 
-            // These IRenderAPI methods are deprecated but not sure how to do it otherwise.
-#pragma warning disable CS0618
             rend.GlPushMatrix();
             rend.GlTranslate(x, y, 0);
             rend.GlScale(Settings.OuterRadius, Settings.OuterRadius, 0);
             shader.UniformMatrix("modelViewMatrix", rend.CurrentModelviewMatrix);
             rend.GlPopMatrix();
-#pragma warning restore CS0618
-
             rend.RenderMesh(_circleMesh);
         }
 

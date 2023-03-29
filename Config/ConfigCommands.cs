@@ -1,10 +1,7 @@
 using CommonLib.Extensions;
-using CommonLib.Utils;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 
@@ -26,8 +23,8 @@ namespace CommonLib.Config
         {
             var command = _api.ChatCommands
                 .Create("cfg")
-                .RequiresPrivilege(Privilege.controlserver)
-                .HandleWith(OnShowConfigs);
+                .WithDescription("Runtime config editor for some mod using CommonLib")
+                .RequiresPrivilege(Privilege.controlserver);
 
             foreach (KeyValuePair<Type, object> configByType in _manager.Configs)
             {
@@ -37,95 +34,85 @@ namespace CommonLib.Config
 
                 if (!string.IsNullOrWhiteSpace(configName))
                 {
-                    command = command
-                        .BeginSubCommand(configName)
-                            .HandleWith(args => OnShowEntries(type));
+                    var subCommand = command.BeginSubCommand(configName);
 
                     foreach (PropertyInfo prop in ConfigUtil.GetConfigProperties(type))
                     {
-                        command
+                        subCommand
                             .BeginSubCommand(prop.Name)
-                                .WithArgs(GetConventer("value", prop))
-                                .HandleWith(args => OnSetEntry(type, prop, args))
+                                .WithArgs(GetParser("value", prop))
+                                .HandleWith(args => OnShowOrSetEntry(type, prop, args))
                             .EndSubCommand();
                     }
 
-                    command.EndSubCommand();
+                    subCommand.EndSubCommand();
                 }
             }
         }
 
-        private TextCommandResult OnShowConfigs(TextCommandCallingArgs args)
+        private TextCommandResult OnShowOrSetEntry(Type configType, PropertyInfo prop, TextCommandCallingArgs args)
         {
-            IEnumerable<string> names = _manager.Configs.Keys
-                .Select(type => type.GetCustomAttribute<ConfigAttribute>()?.Filename!)
-                .Where(e => e != null);
-
-            if (!names.Any())
+            object config = _manager.GetConfig(configType);
+            if (args.RawArgs.Length > 0)
             {
-                return TextCommandResult.Success("No configs");
+                object value = args.LastArg;
+                var checkerAttr = configType.GetCustomAttribute<ValueCheckerAttribute>();
+                if (checkerAttr != null)
+                {
+                    if (!checkerAttr.Check((IComparable)value))
+                    {
+                        return TextCommandResult.Error($"Invalid value. {checkerAttr.GetDescription()}");
+                    }
+                }
+                prop.SetValue(config, value);
+                _manager.MarkConfigDirty(configType);
+                return TextCommandResult.Success($"Set value {value} to {args.SubCmdCode}");
             }
-
-            return TextCommandResult.Success(string.Join("\n", names));
-        }
-
-        private TextCommandResult OnShowEntries(Type type)
-        {
-            var sb = new StringBuilder();
-            object config = _manager.GetConfig(type);
-            foreach (PropertyInfo prop in ConfigUtil.GetConfigProperties(type))
+            else
             {
-                sb.AppendLine(prop.Name + ": " + prop.GetValue(config));
+                return TextCommandResult.Success($"{prop.Name}: {prop.GetValue(config)}");
             }
-            return TextCommandResult.Success(sb.ToString());
         }
 
-        private TextCommandResult OnSetEntry(Type configType, PropertyInfo prop, TextCommandCallingArgs args)
-        {
-            prop.SetValue(_manager.GetConfig(configType), args.LastArg);
-            _manager.MarkConfigDirty(configType);
-            return TextCommandResult.Success("done");
-        }
-
-        private ICommandArgumentParser GetConventer(string name, PropertyInfo prop)
+        private ICommandArgumentParser GetParser(string name, PropertyInfo prop)
         {
             var parsers = _api.ChatCommands.Parsers;
             var rangeAttr = prop.GetCustomAttribute<RangeAttribute>();
             switch (prop.PropertyType.Name)
             {
-                case "int":
+                case nameof(Int32):
                     if (rangeAttr != null)
                     {
-                        return parsers.IntRange(name, (int)rangeAttr.Min, (int)rangeAttr.Max);
+                        return parsers.OptionalIntRange(name, rangeAttr.GetMin<int>(), rangeAttr.GetMax<int>());
                     }
-                    return parsers.Int(name);
+                    return parsers.OptionalInt(name);
 
-                case "long":
+                case nameof(Int64):
                     if (rangeAttr != null)
                     {
-                        return parsers.LongRange(name, (long)rangeAttr.Min, (long)rangeAttr.Max);
+                        return parsers.OptionalLongRange(name, rangeAttr.GetMin<long>(), rangeAttr.GetMax<long>());
                     }
-                    return parsers.Long(name);
+                    return parsers.OptionalLong(name);
 
-                case "float":
+                case nameof(Single):
                     if (rangeAttr != null)
                     {
-                        return parsers.FloatRange(name, (float)rangeAttr.Min, (float)rangeAttr.Max);
+                        return parsers.OptionalFloatRange(name, rangeAttr.GetMin<float>(), rangeAttr.GetMax<float>());
                     }
-                    return parsers.Float(name);
+                    return parsers.OptionalFloat(name);
 
-                case "double":
+                case nameof(Double):
                     if (rangeAttr != null)
                     {
-                        return parsers.DoubleRange(name, (double)rangeAttr.Min, (double)rangeAttr.Max);
+                        return parsers.OptionalDoubleRange(name, rangeAttr.GetMin<double>(), rangeAttr.GetMax<double>());
                     }
-                    return parsers.Double(name);
+                    return parsers.OptionalDouble(name);
 
-                case "bool":
-                    return parsers.Bool(name);
+                case nameof(Boolean):
+                    return parsers.OptionalBool(name);
 
-                case "string":
-                    return parsers.Word(name);
+                case nameof(String):
+                    return parsers.OptionalWord(name);
             }
 
             return parsers.Unparsed(name);

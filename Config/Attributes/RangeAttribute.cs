@@ -4,57 +4,64 @@ namespace CommonLib.Config
 {
     public sealed class RangeAttribute : ValueCheckerAttribute
     {
+        private readonly object _min;
+        private readonly object _max;
+
         public Type Type { get; }
-        public IComparable Min { get; }
-        public IComparable Max { get; }
 
         public RangeAttribute(int min, int max)
         {
             Type = typeof(int);
-            Min = min;
-            Max = max;
+            _min = min;
+            _max = max;
         }
 
         public RangeAttribute(long min, long max)
         {
             Type = typeof(long);
-            Min = min;
-            Max = max;
+            _min = min;
+            _max = max;
         }
 
         public RangeAttribute(float min, float max)
         {
             Type = typeof(float);
-            Min = min;
-            Max = max;
+            _min = min;
+            _max = max;
         }
 
         public RangeAttribute(double min, double max)
         {
             Type = typeof(double);
-            Min = min;
-            Max = max;
+            _min = min;
+            _max = max;
         }
+
+        public object GetMin(Type type) => Convert.ChangeType(_min, type);
+        public object GetMax(Type type) => Convert.ChangeType(_max, type);
+
+        public T GetMin<T>() => (T)GetMin(typeof(T));
+        public T GetMax<T>() => (T)GetMax(typeof(T));
 
         public override bool Check(IComparable value)
         {
-            var min = (IComparable)Convert.ChangeType(Min, value.GetType());
-            var max = (IComparable)Convert.ChangeType(Max, value.GetType());
+            var min = (IComparable)GetMin(value.GetType());
+            var max = (IComparable)GetMax(value.GetType());
             return value.CompareTo(min) >= 0 && value.CompareTo(max) <= 0;
         }
 
         public object ClampRange(IComparable value)
         {
             // lower min value
-            if (value.CompareTo(Min) < 0)
+            if (value.CompareTo(_min) < 0)
             {
-                return Min;
+                return _min;
             }
 
             // greater max value
-            if (value.CompareTo(Max) > 0)
+            if (value.CompareTo(_max) > 0)
             {
-                return Max;
+                return _max;
             }
 
             return value;
@@ -62,7 +69,7 @@ namespace CommonLib.Config
 
         public override string GetDescription()
         {
-            return $"{Type} value from {Min} to {Max}";
+            return $"{Type} value from {_min} to {_max}";
         }
     }
 }

@@ -11,9 +11,19 @@ namespace CommonLib.Extensions
             return new LongArgParser(argName, 0, isMandatoryArg: true);
         }
 
+        public static LongArgParser OptionalLong(this CommandArgumentParsers parsers, string argName)
+        {
+            return new LongArgParser(argName, 0, isMandatoryArg: false);
+        }
+
         public static LongArgParser LongRange(this CommandArgumentParsers parsers, string argName, long min, long max)
         {
             return new LongArgParser(argName, min, max, 0, isMandatoryArg: true);
+        }
+
+        public static LongArgParser OptionalLongRange(this CommandArgumentParsers parsers, string argName, long min, long max)
+        {
+            return new LongArgParser(argName, min, max, 0, isMandatoryArg: false);
         }
 
         public static FloatArgParser Float(this CommandArgumentParsers parsers, string argName)
@@ -21,9 +31,14 @@ namespace CommonLib.Extensions
             return new FloatArgParser(argName, isMandatoryArg: true);
         }
 
-        public static FloatArgParser FloatRange(this CommandArgumentParsers parsers, string argName, float min, float max)
+        public static FloatArgParser OptionalFloatRange(this CommandArgumentParsers parsers, string argName, float min, float max)
         {
-            return new FloatArgParser(argName, min, max, isMandatoryArg: true);
+            return new FloatArgParser(argName, min, max, isMandatoryArg: false);
+        }
+
+        public static DoubleArgParser OptionalDoubleRange(this CommandArgumentParsers parsers, string argName, double min, double max)
+        {
+            return new DoubleArgParser(argName, min, max, isMandatoryArg: false);
         }
 
         public class LongArgParser : ArgumentParserBase

@@ -57,7 +57,7 @@ namespace CommonLib.Config
             {
                 object value = args.LastArg;
                 var checkerAttr = configType.GetCustomAttribute<ValueCheckerAttribute>();
-                if (checkerAttr != null)
+                if (checkerAttr is not null)
                 {
                     if (!checkerAttr.Check((IComparable)value))
                     {
@@ -81,28 +81,28 @@ namespace CommonLib.Config
             switch (prop.PropertyType.Name)
             {
                 case nameof(Int32):
-                    if (rangeAttr != null)
+                    if (rangeAttr is not null)
                     {
                         return parsers.OptionalIntRange(name, rangeAttr.GetMin<int>(), rangeAttr.GetMax<int>());
                     }
                     return parsers.OptionalInt(name);
 
                 case nameof(Int64):
-                    if (rangeAttr != null)
+                    if (rangeAttr is not null)
                     {
                         return parsers.OptionalLongRange(name, rangeAttr.GetMin<long>(), rangeAttr.GetMax<long>());
                     }
                     return parsers.OptionalLong(name);
 
                 case nameof(Single):
-                    if (rangeAttr != null)
+                    if (rangeAttr is not null)
                     {
                         return parsers.OptionalFloatRange(name, rangeAttr.GetMin<float>(), rangeAttr.GetMax<float>());
                     }
                     return parsers.OptionalFloat(name);
 
                 case nameof(Double):
-                    if (rangeAttr != null)
+                    if (rangeAttr is not null)
                     {
                         return parsers.OptionalDoubleRange(name, rangeAttr.GetMin<double>(), rangeAttr.GetMax<double>());
                     }

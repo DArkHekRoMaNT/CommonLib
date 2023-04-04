@@ -65,7 +65,7 @@ namespace CommonLib.UI
                 }
             }
 
-            if (_circleMesh != null) Api.Render.UpdateMesh(_circleMesh, data);
+            if (_circleMesh is not null) Api.Render.UpdateMesh(_circleMesh, data);
             else _circleMesh = Api.Render.UploadMesh(data);
         }
 
@@ -121,7 +121,7 @@ namespace CommonLib.UI
         public void Dispose()
         {
             GC.SuppressFinalize(this);
-            if (_circleMesh != null)
+            if (_circleMesh is not null)
             {
                 Api.Render.DeleteMesh(_circleMesh);
             }

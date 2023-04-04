@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using Vintagestory.API.Common;
@@ -61,7 +60,7 @@ namespace CommonLib.Config
                 object item = Activator.CreateInstance(itemType, value, defaultValue);
 
                 var descAttr = prop.GetCustomAttribute<DescriptionAttribute>();
-                if (descAttr != null)
+                if (descAttr is not null)
                 {
                     string name = nameof(JsonConfigValue<object>.Description);
                     PropertyInfo desc = itemType.GetProperty(name);
@@ -69,7 +68,7 @@ namespace CommonLib.Config
                 }
 
                 var checkerAttr = prop.GetCustomAttribute<ValueCheckerAttribute>();
-                if (checkerAttr != null)
+                if (checkerAttr is not null)
                 {
                     string name = nameof(JsonConfigValue<object>.Limits);
                     PropertyInfo limits = itemType.GetProperty(name);
@@ -89,7 +88,7 @@ namespace CommonLib.Config
             foreach (PropertyInfo prop in GetConfigProperties(type))
             {
                 var checkerAttr = prop.GetCustomAttribute<ValueCheckerAttribute>();
-                if (checkerAttr != null)
+                if (checkerAttr is not null)
                 {
                     object value = prop.GetValue(config);
                     if (!checkerAttr.Check((IComparable)value))
@@ -122,14 +121,14 @@ namespace CommonLib.Config
             {
                 if (configAttr.UseAllPropertiesByDefault)
                 {
-                    if (prop.GetCustomAttribute<ConfigIgnoreAttribute>() == null)
+                    if (prop.GetCustomAttribute<ConfigIgnoreAttribute>() is null)
                     {
                         yield return prop;
                     }
                 }
                 else
                 {
-                    if (prop.GetCustomAttribute<ConfigPropertyAttribute>() != null)
+                    if (prop.GetCustomAttribute<ConfigPropertyAttribute>() is not null)
                     {
                         yield return prop;
                     }
@@ -142,7 +141,7 @@ namespace CommonLib.Config
             var dict = new Dictionary<string, object>();
             foreach (PropertyInfo prop in GetConfigProperties(config.GetType()))
             {
-                if (prop.GetCustomAttribute<ClientOnlyAttribute>() == null)
+                if (prop.GetCustomAttribute<ClientOnlyAttribute>() is null)
                 {
                     dict.Add(prop.Name, prop.GetValue(config));
                 }

@@ -50,7 +50,7 @@ namespace CommonLib.Utils
             logger ??= api.Logger;
 
             var data = api.LoadDataFile<T>(file, logger);
-            if (data == null)
+            if (data is null)
             {
                 logger.Notification("Will initialize new data file");
                 data = new();

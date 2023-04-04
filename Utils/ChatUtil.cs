@@ -78,7 +78,7 @@ namespace CommonLib.Utils
             ICoreAPI api = playerEntity.Api;
             IPlayer player = api.World.PlayerByUid((playerEntity as EntityPlayer)?.PlayerUID);
 
-            if (player != null)
+            if (player is not null)
             {
                 player.SendMessage(msg, chatGroup);
             }

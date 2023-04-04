@@ -18,7 +18,7 @@ namespace CommonLib.Config
         public Dictionary<Type, object> Configs { get; } = new();
         public string[] ConfigNames => Configs.Keys
             .Select(type => type.GetCustomAttribute<ConfigAttribute>()?.Filename!)
-            .Where(e => e != null)
+            .Where(e => e is not null)
             .ToArray();
 
         public override double ExecuteOrder() => 0.001;
@@ -110,7 +110,7 @@ namespace CommonLib.Config
             {
                 ConfigUtil.ValidateConfig(type, ref config, Mod.Logger);
                 ConfigUtil.SaveConfig(_api, type, config);
-                if (_serverChannel != null)
+                if (_serverChannel is not null)
                 {
                     byte[] data = ConfigUtil.SerializeServerPacket(config);
                     _serverChannel.BroadcastPacket(new SyncConfigPacket(data, config.GetType()));

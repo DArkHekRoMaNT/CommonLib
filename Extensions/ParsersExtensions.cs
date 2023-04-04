@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 
@@ -39,6 +40,16 @@ namespace CommonLib.Extensions
         public static DoubleArgParser OptionalDoubleRange(this CommandArgumentParsers parsers, string argName, double min, double max)
         {
             return new DoubleArgParser(argName, min, max, isMandatoryArg: false);
+        }
+
+        public static PlayerArgParser Player(this CommandArgumentParsers parsers, string argName, ICoreAPI api)
+        {
+            return new PlayerArgParser(argName, api, isMandatoryArg: true);
+        }
+
+        public static PlayerArgParser OptionalPlayer(this CommandArgumentParsers parsers, string argName, ICoreAPI api)
+        {
+            return new PlayerArgParser(argName, api, isMandatoryArg: false);
         }
 
         public class LongArgParser : ArgumentParserBase
@@ -114,6 +125,57 @@ namespace CommonLib.Extensions
             public override void SetValue(object data)
             {
                 _value = (long)data;
+            }
+        }
+
+        public class PlayerArgParser : ArgumentParserBase
+        {
+            protected ICoreAPI api;
+
+            protected IPlayer? player;
+
+            public PlayerArgParser(string argName, ICoreAPI api, bool isMandatoryArg)
+                : base(argName, isMandatoryArg)
+            {
+                this.api = api;
+            }
+
+            public override string[] GetValidRange(CmdArgs args)
+            {
+                return api.World.AllPlayers.Select((IPlayer p) => p.PlayerName).ToArray();
+            }
+
+            public override object? GetValue()
+            {
+                return player;
+            }
+
+            public override void SetValue(object data)
+            {
+                player = (IPlayer)data;
+            }
+
+            public override EnumParseResult TryProcess(TextCommandCallingArgs args, Action<AsyncParseResults> onReady = null)
+            {
+                string playername = args.RawArgs.PopWord();
+                if (playername == null)
+                {
+                    lastErrorMessage = Lang.Get("Argument is missing");
+                    return EnumParseResult.Bad;
+                }
+
+                player = api.World.AllPlayers.FirstOrDefault((IPlayer p) => p.PlayerName == playername);
+                if (player == null)
+                {
+                    lastErrorMessage = Lang.Get("No such player online");
+                }
+
+                if (player == null)
+                {
+                    return EnumParseResult.Bad;
+                }
+
+                return EnumParseResult.Good;
             }
         }
     }

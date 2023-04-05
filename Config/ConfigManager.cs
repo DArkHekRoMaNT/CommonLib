@@ -49,10 +49,18 @@ namespace CommonLib.Config
             {
                 foreach (Type type in GetAllTypesWithAttribute<ConfigAttribute>())
                 {
-                    object config = Activator.CreateInstance(type);
-                    ConfigUtil.LoadConfig(_api, type, ref config, Mod.Logger);
-                    ConfigUtil.SaveConfig(_api, type, config);
-                    Configs.Add(type, config);
+                    try
+                    {
+                        object config = Activator.CreateInstance(type);
+                        ConfigUtil.LoadConfig(_api, type, ref config, Mod.Logger);
+                        ConfigUtil.SaveConfig(_api, type, config);
+                        Configs.Add(type, config);
+                    }
+                    catch (Exception e)
+                    {
+                        Mod.Logger.Error($"Take error during load config {type.FullName}, skipped. " +
+                            $"May cause problems with this mod further. Error:\n{e}");
+                    }
                 }
             }
 
@@ -131,7 +139,7 @@ namespace CommonLib.Config
             {
                 return value;
             }
-            throw new KeyNotFoundException("Unknown config type: " + type.FullName);
+            throw new KeyNotFoundException($"Unknown config type: {type.FullName}");
         }
 
         [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]

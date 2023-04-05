@@ -1,7 +1,4 @@
 #if DEBUG
-using Vintagestory.API.Config;
-using Vintagestory.API.Server;
-
 namespace CommonLib.Config
 {
     [Config("test.json")]

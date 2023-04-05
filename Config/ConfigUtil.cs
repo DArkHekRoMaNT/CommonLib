@@ -1,6 +1,5 @@
 using CommonLib.Utils;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections;
@@ -13,7 +12,18 @@ namespace CommonLib.Config
 {
     internal static class ConfigUtil
     {
-        internal static object LoadConfig(ICoreAPI api, Type type, ref object config, ILogger logger)
+        public static void InitConfig(ICoreAPI api, Type type)
+        {
+            _ = type.GetCustomAttribute<ConfigAttribute>()
+                ?? throw new ArgumentException($"{type} is not a config");
+
+            foreach (PropertyInfo prop in GetConfigProperties(type))
+            {
+                prop.GetCustomAttribute<ValueCheckerAttribute>()?.Init(api);
+            }
+        }
+
+        public static object LoadConfig(ICoreAPI api, Type type, ref object config, ILogger logger)
         {
             logger ??= api.Logger;
 
@@ -43,7 +53,7 @@ namespace CommonLib.Config
             return config;
         }
 
-        internal static void SaveConfig(ICoreAPI api, Type type, object config)
+        public static void SaveConfig(ICoreAPI api, Type type, object config)
         {
             var configAttr = type.GetCustomAttribute<ConfigAttribute>()
                 ?? throw new ArgumentException($"{type} is not a config");
@@ -84,7 +94,7 @@ namespace CommonLib.Config
             api.StoreModConfig(jsonConfig, filename);
         }
 
-        internal static void ValidateConfig(Type type, ref object config, ILogger logger)
+        public static void ValidateConfig(Type type, ref object config, ILogger logger)
         {
             object defaultConfig = Activator.CreateInstance(type);
             foreach (PropertyInfo prop in GetConfigProperties(type))
@@ -116,7 +126,7 @@ namespace CommonLib.Config
             }
         }
 
-        internal static IEnumerable<PropertyInfo> GetConfigProperties(Type type)
+        public static IEnumerable<PropertyInfo> GetConfigProperties(Type type)
         {
             var configAttr = type.GetCustomAttribute<ConfigAttribute>();
             foreach (PropertyInfo prop in type.GetProperties())
@@ -138,7 +148,7 @@ namespace CommonLib.Config
             }
         }
 
-        internal static byte[] SerializeServerPacket(object config)
+        public static byte[] SerializeServerPacket(object config)
         {
             var dict = new Dictionary<string, object>();
             foreach (PropertyInfo prop in GetConfigProperties(config.GetType()))
@@ -152,7 +162,7 @@ namespace CommonLib.Config
             return Encoding.UTF8.GetBytes(json);
         }
 
-        internal static object DeserializeServerPacket(object config, byte[] data)
+        public static object DeserializeServerPacket(object config, byte[] data)
         {
             string json = Encoding.UTF8.GetString(data);
             var dict = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);

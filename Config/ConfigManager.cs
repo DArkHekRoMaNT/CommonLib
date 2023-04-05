@@ -50,6 +50,7 @@ namespace CommonLib.Config
                 foreach (Type type in GetAllTypesWithAttribute<ConfigAttribute>())
                 {
                     object config = Activator.CreateInstance(type);
+                    ConfigUtil.InitConfig(_api, type);
                     ConfigUtil.LoadConfig(_api, type, ref config, Mod.Logger);
                     ConfigUtil.SaveConfig(_api, type, config);
                     Configs.Add(type, config);

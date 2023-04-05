@@ -1,7 +1,9 @@
 using CommonLib.Utils;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
@@ -27,9 +29,9 @@ namespace CommonLib.Config
 
             foreach (PropertyInfo prop in GetConfigProperties(type))
             {
-                if (jsonConfig.TryGetValue(prop.Name, out JsonConfigValue<object> value))
+                if (jsonConfig.TryGetValue(prop.Name, out JsonConfigValue<object> element))
                 {
-                    prop.SetValue(config, Convert.ChangeType(value.Value, prop.PropertyType));
+                    prop.SetValue(config, ConvertType(element.Value, prop.PropertyType));
                 }
                 else
                 {
@@ -158,10 +160,30 @@ namespace CommonLib.Config
             {
                 if (dict.TryGetValue(prop.Name, out object value))
                 {
-                    prop.SetValue(config, Convert.ChangeType(value, prop.PropertyType));
+                    prop.SetValue(config, ConvertType(value, prop.PropertyType));
                 }
             }
             return config;
+        }
+
+        public static object ConvertType(object value, Type type)
+        {
+            if (type.IsArray)
+            {
+                var list = (IList)value;
+                Type elementType = type.GetElementType();
+                Array convertedArray = Array.CreateInstance(elementType, list.Count);
+                for (int i = 0; i < list.Count; i++)
+                {
+                    object element = Convert.ChangeType(list[i], elementType);
+                    convertedArray.SetValue(element, i);
+                }
+                return convertedArray;
+            }
+            else
+            {
+                return Convert.ChangeType(value, type);
+            }
         }
 
         private class JsonConfigValue<T>

@@ -16,9 +16,11 @@ namespace CommonLib.Config
         private ICoreAPI _api = null!;
 
         public Dictionary<Type, object> Configs { get; } = new();
+
+        [Obsolete("What is it for?")]
         public string[] ConfigNames => Configs.Keys
-            .Select(type => type.GetCustomAttribute<ConfigAttribute>()?.Filename!)
-            .Where(e => e is not null)
+            .Select(type => type.GetCustomAttribute<ConfigAttribute>()?.Name ?? "")
+            .Where(e => !string.IsNullOrEmpty(e))
             .ToArray();
 
         public override double ExecuteOrder() => 0.001;

@@ -1,6 +1,8 @@
 using CommonLib.Extensions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
@@ -22,7 +24,8 @@ namespace CommonLib.Config
         private void InitConfigCommand()
         {
             var command = _api.ChatCommands
-                .Create("cfg")
+                .Create("clconfig")
+                .WithAlias("cfg")
                 .WithDescription("Runtime config editor for some mod using CommonLib")
                 .RequiresPrivilege(Privilege.controlserver);
 
@@ -30,7 +33,7 @@ namespace CommonLib.Config
             {
                 var type = configByType.Key;
                 var config = configByType.Value;
-                var configName = type.GetCustomAttribute<ConfigAttribute>()?.Filename;
+                var configName = type.GetCustomAttribute<ConfigAttribute>()?.Name;
 
                 if (!string.IsNullOrWhiteSpace(configName))
                 {
@@ -70,6 +73,15 @@ namespace CommonLib.Config
             }
             else
             {
+                if (prop.PropertyType.IsArray)
+                {
+                    var list = new List<string>();
+                    foreach (var value in (IEnumerable)prop.GetValue(config))
+                    {
+                        list.Add(value.ToString());
+                    }
+                    return TextCommandResult.Success($"{prop.Name}: [ {string.Join(", ", list)} ]");
+                }
                 return TextCommandResult.Success($"{prop.Name}: {prop.GetValue(config)}");
             }
         }

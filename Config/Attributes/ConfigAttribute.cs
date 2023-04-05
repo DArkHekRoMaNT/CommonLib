@@ -22,12 +22,22 @@ namespace CommonLib.Config
     [AttributeUsage(AttributeTargets.Class)]
     public class ConfigAttribute : Attribute
     {
+        public string Name { get; }
         public string Filename { get; }
         public bool UseAllPropertiesByDefault { get; set; } = true;
 
         public ConfigAttribute(string filename)
         {
-            Filename = filename;
+            if (filename.EndsWith(".json"))
+            {
+                Name = filename.Substring(0, filename.Length - 5);
+                Filename = filename;
+            }
+            else
+            {
+                Name = filename;
+                Filename = filename + ".json";
+            }
         }
     }
 }

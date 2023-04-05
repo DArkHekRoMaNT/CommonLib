@@ -1,3 +1,5 @@
+#nullable disable
+
 using System;
 using System.Linq;
 using Vintagestory.API.Common;
@@ -7,29 +9,31 @@ namespace CommonLib.Extensions
 {
     public static class ParsersExtensions
     {
-        public static LongArgParser Long(this CommandArgumentParsers parsers, string argName)
+        #region missing parsers
+
+        public static LongArgParser Long(this CommandArgumentParsers parsers, string argName, long defaultValue = 0)
         {
-            return new LongArgParser(argName, 0, isMandatoryArg: true);
+            return new LongArgParser(argName, defaultValue, isMandatoryArg: true);
         }
 
-        public static LongArgParser OptionalLong(this CommandArgumentParsers parsers, string argName)
+        public static LongArgParser OptionalLong(this CommandArgumentParsers parsers, string argName, long defaultValue = 0)
         {
-            return new LongArgParser(argName, 0, isMandatoryArg: false);
+            return new LongArgParser(argName, defaultValue, isMandatoryArg: false);
         }
 
-        public static LongArgParser LongRange(this CommandArgumentParsers parsers, string argName, long min, long max)
+        public static LongArgParser LongRange(this CommandArgumentParsers parsers, string argName, long min, long max, long defaultValue = 0)
         {
-            return new LongArgParser(argName, min, max, 0, isMandatoryArg: true);
+            return new LongArgParser(argName, min, max, defaultValue, isMandatoryArg: true);
         }
 
-        public static LongArgParser OptionalLongRange(this CommandArgumentParsers parsers, string argName, long min, long max)
+        public static LongArgParser OptionalLongRange(this CommandArgumentParsers parsers, string argName, long min, long max, long defaultValue = 0)
         {
-            return new LongArgParser(argName, min, max, 0, isMandatoryArg: false);
+            return new LongArgParser(argName, min, max, defaultValue, isMandatoryArg: false);
         }
 
-        public static FloatArgParser Float(this CommandArgumentParsers parsers, string argName)
+        public static FloatArgParser FloatRange(this CommandArgumentParsers parsers, float min, float max, string argName)
         {
-            return new FloatArgParser(argName, isMandatoryArg: true);
+            return new FloatArgParser(argName, min, max, isMandatoryArg: true);
         }
 
         public static FloatArgParser OptionalFloatRange(this CommandArgumentParsers parsers, string argName, float min, float max)
@@ -54,20 +58,20 @@ namespace CommonLib.Extensions
 
         public class LongArgParser : ArgumentParserBase
         {
-            private readonly long _min;
+            private readonly long min;
 
-            private readonly long _max;
+            private readonly long max;
 
-            private long _value;
+            private long value;
 
-            private readonly long _defaultValue;
+            private readonly long defaultValue;
 
             public LongArgParser(string argName, long min, long max, long defaultValue, bool isMandatoryArg)
                 : base(argName, isMandatoryArg)
             {
-                _defaultValue = defaultValue;
-                _min = min;
-                _max = max;
+                this.defaultValue = defaultValue;
+                this.min = min;
+                this.max = max;
             }
 
             public override string GetSyntaxExplanation()
@@ -78,9 +82,9 @@ namespace CommonLib.Extensions
             public LongArgParser(string argName, long defaultValue, bool isMandatoryArg)
                 : base(argName, isMandatoryArg)
             {
-                _defaultValue = defaultValue;
-                _min = long.MinValue;
-                _max = long.MaxValue;
+                this.defaultValue = defaultValue;
+                min = long.MinValue;
+                max = long.MaxValue;
             }
 
             public override string[] GetValidRange(CmdArgs args)
@@ -94,12 +98,12 @@ namespace CommonLib.Extensions
 
             public override object GetValue()
             {
-                return _value;
+                return value;
             }
 
             public override void PreProcess(TextCommandCallingArgs args)
             {
-                _value = _defaultValue;
+                value = defaultValue;
                 base.PreProcess(args);
             }
 
@@ -112,19 +116,19 @@ namespace CommonLib.Extensions
                     return EnumParseResult.Bad;
                 }
 
-                if (num < _min || num > _max)
+                if (num < min || num > max)
                 {
                     lastErrorMessage = Lang.Get("Number out of range");
                     return EnumParseResult.Bad;
                 }
 
-                _value = num.Value;
+                value = num.Value;
                 return EnumParseResult.Good;
             }
 
             public override void SetValue(object data)
             {
-                _value = (long)data;
+                value = (long)data;
             }
         }
 
@@ -132,7 +136,7 @@ namespace CommonLib.Extensions
         {
             protected ICoreAPI api;
 
-            protected IPlayer? player;
+            protected IPlayer player;
 
             public PlayerArgParser(string argName, ICoreAPI api, bool isMandatoryArg)
                 : base(argName, isMandatoryArg)
@@ -178,5 +182,71 @@ namespace CommonLib.Extensions
                 return EnumParseResult.Good;
             }
         }
+
+        #endregion
+
+        #region default value support
+
+        public static FixedBoolArgParser Bool(this CommandArgumentParsers parsers, string argName, bool defaultValue = false, string trueAlias = "on")
+        {
+            return new FixedBoolArgParser(argName, defaultValue, trueAlias, isMandatoryArg: true);
+        }
+
+        public static FixedBoolArgParser OptionalBool(this CommandArgumentParsers parsers, string argName, bool defaultValue = false, string trueAlias = "on")
+        {
+            return new FixedBoolArgParser(argName, defaultValue, trueAlias, isMandatoryArg: false);
+        }
+
+        public class FixedBoolArgParser : ArgumentParserBase
+        {
+            private bool value;
+
+            private bool defaultValue;
+
+            private string trueAlias;
+
+            public FixedBoolArgParser(string argName, bool defaultValue, string trueAlias, bool isMandatoryArg)
+                : base(argName, isMandatoryArg)
+            {
+                this.defaultValue = defaultValue;
+                this.trueAlias = trueAlias;
+            }
+
+            public override string GetSyntaxExplanation()
+            {
+                return "&nbsp;&nbsp;<i>" + argName + "</i> is a boolean, including 1 or 0, yes or no, true or false, or " + trueAlias;
+            }
+
+            public override object GetValue()
+            {
+                return value;
+            }
+
+            public override void SetValue(object data)
+            {
+                value = (bool)data;
+            }
+
+            public override void PreProcess(TextCommandCallingArgs args)
+            {
+                value = defaultValue;
+                base.PreProcess(args);
+            }
+
+            public override EnumParseResult TryProcess(TextCommandCallingArgs args, Action<AsyncParseResults> onReady = null)
+            {
+                bool? flag = args.RawArgs.PopBool(null, trueAlias);
+                if (!flag.HasValue)
+                {
+                    lastErrorMessage = "Missing";
+                    return EnumParseResult.Bad;
+                }
+
+                value = flag.Value;
+                return EnumParseResult.Good;
+            }
+        }
+
+        #endregion
     }
 }

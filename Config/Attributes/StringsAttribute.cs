@@ -1,8 +1,5 @@
 using System;
-using System.Globalization;
 using System.Linq;
-using Vintagestory.API.Common;
-using Vintagestory.GameContent;
 
 namespace CommonLib.Config
 {

@@ -167,7 +167,7 @@ namespace CommonLib.Extensions
                 player = api.World.AllPlayers.FirstOrDefault((IPlayer p) => p.PlayerName == playername);
                 if (player == null)
                 {
-                    lastErrorMessage = Lang.Get("No such player online");
+                    lastErrorMessage = Lang.Get("No such player");
                 }
 
                 if (player == null)

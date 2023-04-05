@@ -1,4 +1,5 @@
 using System;
+using Vintagestory.API.Common;
 
 namespace CommonLib.Config
 {
@@ -43,7 +44,7 @@ namespace CommonLib.Config
         public T GetMin<T>() => (T)GetMin(typeof(T));
         public T GetMax<T>() => (T)GetMax(typeof(T));
 
-        public override bool Check(IComparable value)
+        public override bool Check(ICoreAPI api, IComparable value)
         {
             var min = (IComparable)GetMin(value.GetType());
             var max = (IComparable)GetMax(value.GetType());
@@ -67,7 +68,7 @@ namespace CommonLib.Config
             return value;
         }
 
-        public override string GetDescription()
+        public override string GetDescription(ICoreAPI api)
         {
             return $"{Type} value from {_min} to {_max}";
         }

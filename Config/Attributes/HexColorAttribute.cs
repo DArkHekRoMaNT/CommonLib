@@ -1,11 +1,12 @@
 using System;
 using System.Globalization;
+using Vintagestory.API.Common;
 
 namespace CommonLib.Config
 {
     public sealed class HexColorAttribute : ValueCheckerAttribute
     {
-        public override bool Check(IComparable value)
+        public override bool Check(ICoreAPI api, IComparable value)
         {
             string hexStr = (string)value;
 
@@ -18,7 +19,7 @@ namespace CommonLib.Config
                 CultureInfo.InvariantCulture, out _);
         }
 
-        public override string GetDescription()
+        public override string GetDescription(ICoreAPI api)
         {
             return $"Hex color, for example: #112233";
         }

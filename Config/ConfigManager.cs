@@ -50,7 +50,6 @@ namespace CommonLib.Config
                 foreach (Type type in GetAllTypesWithAttribute<ConfigAttribute>())
                 {
                     object config = Activator.CreateInstance(type);
-                    ConfigUtil.InitConfig(_api, type);
                     ConfigUtil.LoadConfig(_api, type, ref config, Mod.Logger);
                     ConfigUtil.SaveConfig(_api, type, config);
                     Configs.Add(type, config);
@@ -111,7 +110,7 @@ namespace CommonLib.Config
         {
             if (Configs.TryGetValue(type, out object config))
             {
-                ConfigUtil.ValidateConfig(type, ref config, Mod.Logger);
+                ConfigUtil.ValidateConfig(_api, type, ref config, Mod.Logger);
                 ConfigUtil.SaveConfig(_api, type, config);
                 if (_serverChannel is not null)
                 {

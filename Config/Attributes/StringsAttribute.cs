@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Vintagestory.API.Common;
 
 namespace CommonLib.Config
 {
@@ -12,12 +13,12 @@ namespace CommonLib.Config
             _strings = strings;
         }
 
-        public override bool Check(IComparable value)
+        public override bool Check(ICoreAPI api, IComparable value)
         {
             return _strings.Contains(value);
         }
 
-        public override string GetDescription()
+        public override string GetDescription(ICoreAPI api)
         {
             return $"String values: {string.Join(", ", _strings)}";
         }

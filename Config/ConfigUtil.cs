@@ -12,17 +12,6 @@ namespace CommonLib.Config
 {
     internal static class ConfigUtil
     {
-        public static void InitConfig(ICoreAPI api, Type type)
-        {
-            _ = type.GetCustomAttribute<ConfigAttribute>()
-                ?? throw new ArgumentException($"{type} is not a config");
-
-            foreach (PropertyInfo prop in GetConfigProperties(type))
-            {
-                prop.GetCustomAttribute<ValueCheckerAttribute>()?.Init(api);
-            }
-        }
-
         public static object LoadConfig(ICoreAPI api, Type type, ref object config, ILogger logger)
         {
             logger ??= api.Logger;
@@ -84,7 +73,7 @@ namespace CommonLib.Config
                 {
                     string name = nameof(JsonConfigValue<object>.Limits);
                     PropertyInfo limits = itemType.GetProperty(name);
-                    limits.SetValue(item, checkerAttr.GetDescription());
+                    limits.SetValue(item, checkerAttr.GetDescription(api));
                 }
 
                 jsonConfig.Add(prop.Name, item);
@@ -94,7 +83,7 @@ namespace CommonLib.Config
             api.StoreModConfig(jsonConfig, filename);
         }
 
-        public static void ValidateConfig(Type type, ref object config, ILogger logger)
+        public static void ValidateConfig(ICoreAPI api, Type type, ref object config, ILogger logger)
         {
             object defaultConfig = Activator.CreateInstance(type);
             foreach (PropertyInfo prop in GetConfigProperties(type))
@@ -103,7 +92,7 @@ namespace CommonLib.Config
                 if (checkerAttr is not null)
                 {
                     object value = prop.GetValue(config);
-                    if (!checkerAttr.Check((IComparable)value))
+                    if (!checkerAttr.Check(api, (IComparable)value))
                     {
                         if (checkerAttr is RangeAttribute rangeAttr)
                         {

@@ -1,39 +1,32 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Vintagestory.API.Common;
-using Vintagestory.GameContent;
 
 namespace CommonLib.Config
 {
     public sealed class WaypointNameAttribute : ValueCheckerAttribute
     {
-        private WaypointMapLayer? _waypointMapLayer;
-
-        public override void Init(ICoreAPI api)
+        public override bool Check(ICoreAPI api, IComparable value)
         {
-            var mapLayers = api.ModLoader.GetModSystem<WorldMapManager>().MapLayers;
-            _waypointMapLayer = (WaypointMapLayer)mapLayers.FirstOrDefault(e => e is WaypointMapLayer);
+            return GetWaypointIcons(api).Any(e => e == (string)value);
         }
 
-        public override bool Check(IComparable value)
+        public override string GetDescription(ICoreAPI api)
         {
-            if (_waypointMapLayer is null)
-            {
-                throw new InvalidOperationException("Not inited");
-            }
-
-            return _waypointMapLayer.WaypointIcons.Any(e => e.Key == (string)value);
+            return $"Icons: {string.Join(", ", GetWaypointIcons(api))}";
         }
 
-        public override string GetDescription()
+        private static string[] GetWaypointIcons(ICoreAPI api)
         {
-            if (_waypointMapLayer is null)
+            List<IAsset> icons = api.Assets.GetMany("textures/icons/worldmap/", null, loadAsset: false);
+            return icons.Select(e =>
             {
-                throw new InvalidOperationException("Not inited");
-            }
-
-            string[] icons = _waypointMapLayer.WaypointIcons.Select(e => e.Key).ToArray();
-            return $"Icons: {string.Join(", ", icons)}";
+                string name = e.Name.Substring(0, e.Name.IndexOf("."));
+                name = Regex.Replace(name, "\\d+\\-", "");
+                return name;
+            }).ToArray();
         }
     }
 }

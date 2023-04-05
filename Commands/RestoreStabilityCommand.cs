@@ -13,7 +13,7 @@ namespace CommonLib.Commands
                 .GetOrCreate("cl")
                 .BeginSubCommand("rst")
                     .WithDescription("Restore player temporal stability")
-                    .WithArgs(parsers.OptionalPlayer("player", api))
+                    .WithArgs(parsers.OptionalOnlinePlayer("player", api))
                     .RequiresPrivilege(Privilege.gamemode)
                     .HandleWith(RestorePlayerStability)
                 .EndSubCommand();

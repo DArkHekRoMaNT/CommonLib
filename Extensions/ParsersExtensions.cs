@@ -56,6 +56,11 @@ namespace CommonLib.Extensions
             return new PlayerArgParser(argName, api, isMandatoryArg: false);
         }
 
+        public static OnlinePlayerArgParser OptionalOnlinePlayer(this CommandArgumentParsers parsers, string argName, ICoreAPI api)
+        {
+            return new OnlinePlayerArgParser(argName, api, isMandatoryArg: false);
+        }
+
         public class LongArgParser : ArgumentParserBase
         {
             private readonly long min;

@@ -64,7 +64,7 @@ namespace CommonLib.Commands
                 else
                 {
                     object value = args.LastArg;
-                    var checkerAttr = configType.GetCustomAttribute<ValueCheckerAttribute>();
+                    var checkerAttr = prop.GetCustomAttribute<ValueCheckerAttribute>();
                     if (checkerAttr is not null)
                     {
                         if (!checkerAttr.Check(api, (IComparable)value))

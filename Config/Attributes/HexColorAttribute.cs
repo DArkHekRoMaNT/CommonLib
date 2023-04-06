@@ -10,7 +10,7 @@ namespace CommonLib.Config
         {
             string hexStr = (string)value;
 
-            if (!hexStr.StartsWith("#") && hexStr.Length != 7)
+            if (!hexStr.StartsWith("#") || hexStr.Length != 7)
             {
                 return false;
             }

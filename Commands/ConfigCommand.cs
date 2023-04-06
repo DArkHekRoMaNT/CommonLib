@@ -15,10 +15,11 @@ namespace CommonLib.Commands
         {
             var manager = api.ModLoader.GetModSystem<ConfigManager>();
             var command = api.ChatCommands
-                .GetOrCreate("clconfig")
-                .WithAlias("cfg")
-                .WithDescription("Runtime config editor for some mods using CommonLib")
-                .RequiresPrivilege(Privilege.controlserver);
+                .GetOrCreate("cl")
+                .BeginSubCommand("config")
+                    .WithRootAlias("config")
+                    .WithDescription("Runtime config editor for some mods using CommonLib")
+                    .RequiresPrivilege(Privilege.controlserver);
 
             foreach (KeyValuePair<Type, object> configByType in manager.Configs)
             {
@@ -42,11 +43,25 @@ namespace CommonLib.Commands
                     subCommand.EndSubCommand();
                 }
             }
+            command.EndSubCommand();
 
             TextCommandResult OnShowOrSetEntry(Type configType, PropertyInfo prop, TextCommandCallingArgs args)
             {
                 object config = manager.GetConfig(configType);
-                if (args.RawArgs.Length > 0)
+                if (args.Parsers[0].IsMissing)
+                {
+                    if (prop.PropertyType.IsArray)
+                    {
+                        var list = new List<string>();
+                        foreach (var value in (IEnumerable)prop.GetValue(config))
+                        {
+                            list.Add(value.ToString());
+                        }
+                        return TextCommandResult.Success($"{prop.Name}: [ {string.Join(", ", list)} ]");
+                    }
+                    return TextCommandResult.Success($"{prop.Name}: {prop.GetValue(config)}");
+                }
+                else
                 {
                     object value = args.LastArg;
                     var checkerAttr = configType.GetCustomAttribute<ValueCheckerAttribute>();
@@ -60,19 +75,6 @@ namespace CommonLib.Commands
                     prop.SetValue(config, value);
                     manager.MarkConfigDirty(configType);
                     return TextCommandResult.Success($"Set value {value} to {args.SubCmdCode}");
-                }
-                else
-                {
-                    if (prop.PropertyType.IsArray)
-                    {
-                        var list = new List<string>();
-                        foreach (var value in (IEnumerable)prop.GetValue(config))
-                        {
-                            list.Add(value.ToString());
-                        }
-                        return TextCommandResult.Success($"{prop.Name}: [ {string.Join(", ", list)} ]");
-                    }
-                    return TextCommandResult.Success($"{prop.Name}: {prop.GetValue(config)}");
                 }
             }
 

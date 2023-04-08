@@ -82,6 +82,11 @@ namespace CommonLib.Config
                         }
                     }
                     catch (FileNotFoundException) { }
+                    catch (TypeLoadException) { }
+                    catch (Exception e)
+                    {
+                        Mod.Logger.Warning($"Assembly {assembly.FullName} skipped. {e.GetType()}: {e.Message}");
+                    }
                 }
                 return types.ToArray();
             }

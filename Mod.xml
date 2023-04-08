@@ -2,13 +2,13 @@
 	<PropertyGroup>
 		<Name>CommonLib</Name>
 		<ModId>commonlib</ModId>
-		<Version>2.0.2</Version>
+		<Version>2.0.3</Version>
 		<Authors>DArkHekRoMaNT</Authors>
 		<GameVersion>1.18.0-rc.1</GameVersion>
 		<RequiredOnClient>false</RequiredOnClient>
 		<RequiredOnServer>false</RequiredOnServer>
 	</PropertyGroup>
-	<ItemGroup>		
+	<ItemGroup>
 		<IncludeFiles Include="modicon.png" />
 		<IncludeFiles Include="LICENSE" />
 		<IncludeFiles Include="README.md" />

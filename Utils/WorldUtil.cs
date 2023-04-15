@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
@@ -19,26 +19,10 @@ namespace CommonLib.Utils
         /// <summary>
         /// Checks if the player can break a block at the given coordinates (claim check)
         /// </summary>
+        [Obsolete("Use IWorldAccessor.Claims.TryAccess and TestAccess")]
         public static bool IsPlayerCanBreakBlock(this IWorldAccessor world, BlockPos pos, IServerPlayer byPlayer)
         {
-            if (byPlayer.WorldData.CurrentGameMode == EnumGameMode.Creative)
-            {
-                return true;
-            }
-
-            var sapi = (ICoreServerAPI)world.Api;
-
-            IList<LandClaim> claims = sapi.WorldManager.SaveGame.LandClaims;
-            foreach (LandClaim claim in claims)
-            {
-                if (claim.PositionInside(pos))
-                {
-                    EnumPlayerAccessResult result = claim.TestPlayerAccess(byPlayer, EnumBlockAccessFlags.BuildOrBreak);
-                    return result != EnumPlayerAccessResult.Denied;
-                }
-            }
-
-            return true;
+            return world.Claims.TestAccess(byPlayer, pos, EnumBlockAccessFlags.BuildOrBreak) == EnumWorldAccessResponse.Granted;
         }
 
         /// <summary>

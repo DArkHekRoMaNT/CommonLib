@@ -52,7 +52,15 @@ namespace CommonLib.Config
                     try
                     {
                         object config = Activator.CreateInstance(type);
-                        ConfigUtil.LoadConfig(_api, type, ref config, Mod.Logger);
+                        try
+                        {
+                            ConfigUtil.LoadConfig(_api, type, ref config, Mod.Logger);
+                        }
+                        catch (InvalidCastException e)
+                        {
+                            Mod.Logger.Error($"Сonfig {type.FullName} looks corrupted, a new one will be created. Error:\n{e}");
+                            config = Activator.CreateInstance(type);
+                        }
                         ConfigUtil.SaveConfig(_api, type, config);
                         Configs.Add(type, config);
                     }

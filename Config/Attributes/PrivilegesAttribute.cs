@@ -5,6 +5,9 @@ using Vintagestory.API.Server;
 
 namespace CommonLib.Config
 {
+    /// <summary>
+    /// Value is any <see cref="Privilege"/>
+    /// </summary>
     public sealed class PrivilegesAttribute : ValueCheckerAttribute
     {
         public override bool Check(ICoreAPI api, IComparable value)

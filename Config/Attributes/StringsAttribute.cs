@@ -4,6 +4,9 @@ using Vintagestory.API.Common;
 
 namespace CommonLib.Config
 {
+    /// <summary>
+    /// Value is string from list
+    /// </summary>
     public sealed class StringsAttribute : ValueCheckerAttribute
     {
         private readonly string[] _strings;
@@ -20,7 +23,7 @@ namespace CommonLib.Config
 
         public override string GetDescription(ICoreAPI api)
         {
-            return $"String values: {string.Join(", ", _strings)}";
+            return $"{string.Join(", ", _strings)}";
         }
     }
 }

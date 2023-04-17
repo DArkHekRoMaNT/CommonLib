@@ -14,7 +14,7 @@ namespace CommonLib.Config
     /// [Config("myconfig.json")]
     /// public class MyConfig
     /// {
-    ///     [ConfigValue]
+    ///     [ConfigProperty]
     ///     public bool MyToggle { get; set; }
     /// }
     /// </code>

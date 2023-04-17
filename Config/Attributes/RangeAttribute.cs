@@ -3,6 +3,9 @@ using Vintagestory.API.Common;
 
 namespace CommonLib.Config
 {
+    /// <summary>
+    /// Value is numeric from min to max (including them)
+    /// </summary>
     public sealed class RangeAttribute : ValueCheckerAttribute
     {
         private readonly object _min;

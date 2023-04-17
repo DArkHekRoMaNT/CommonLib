@@ -3,6 +3,9 @@ using Vintagestory.API.Common;
 
 namespace CommonLib.Config
 {
+    /// <summary>
+    /// Base abstract value checker, use it for custom checkers
+    /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
     public abstract class ValueCheckerAttribute : Attribute
     {

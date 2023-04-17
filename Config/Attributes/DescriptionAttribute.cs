@@ -2,6 +2,9 @@ using System;
 
 namespace CommonLib.Config
 {
+    /// <summary>
+    /// More detailed value description
+    /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
     public sealed class DescriptionAttribute : Attribute
     {

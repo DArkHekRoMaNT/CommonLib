@@ -4,6 +4,9 @@ using Vintagestory.API.Common;
 
 namespace CommonLib.Config
 {
+    /// <summary>
+    /// Value is hex color string, for example: #112233
+    /// </summary>
     public sealed class HexColorAttribute : ValueCheckerAttribute
     {
         public override bool Check(ICoreAPI api, IComparable value)

@@ -4,7 +4,8 @@
 		<ModId>commonlib</ModId>
 		<Version>2.0.4</Version>
 		<Authors>DArkHekRoMaNT</Authors>
-		<GameVersion>1.18.0-rc.6</GameVersion>
+		<GameVersion>1.18.1</GameVersion>
+		<MinimalGameVersion>1.18.0</MinimalGameVersion>
 		<RequiredOnClient>false</RequiredOnClient>
 		<RequiredOnServer>false</RequiredOnServer>
 	</PropertyGroup>

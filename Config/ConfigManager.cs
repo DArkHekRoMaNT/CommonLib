@@ -6,12 +6,16 @@ using System.Linq;
 using System.Reflection;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 using Vintagestory.API.Server;
 
 namespace CommonLib.Config
 {
     public class ConfigManager : ModSystem
     {
+        private readonly List<string> ClientStartConfigErrors = new();
+        private readonly List<string> ServerStartConfigErrors = new();
+
         private IServerNetworkChannel? _serverChannel;
         private ICoreAPI _api = null!;
 
@@ -35,6 +39,19 @@ namespace CommonLib.Config
                 _serverChannel = sapi.Network
                     .RegisterChannel(Mod.Info.ModID + "-config-manager")
                     .RegisterMessageType<SyncConfigPacket>();
+                sapi.Event.PlayerNowPlaying += byPlayer =>
+                {
+                    if (ServerStartConfigErrors.Count > 0 &&
+                        byPlayer.Privileges.Contains(Privilege.controlserver))
+                    {
+                        string list = string.Join(", ", ServerStartConfigErrors);
+                        string text = $"<font color=#d0342c><strong>CommonLib:</strong></font> " +
+                            $"Can't load server configs: {list}. " +
+                            $"May cause problems, please check server-main.txt and report it";
+
+                        sapi.SendMessage(byPlayer, GlobalConstants.AllChatGroups, text, EnumChatType.OwnMessage);
+                    }
+                };
             }
 
             if (_api is ICoreClientAPI capi)
@@ -43,6 +60,16 @@ namespace CommonLib.Config
                     .RegisterChannel(Mod.Info.ModID + "-config-manager")
                     .RegisterMessageType<SyncConfigPacket>()
                     .SetMessageHandler<SyncConfigPacket>(OnSyncConfigPacketReceived);
+                capi.Event.PlayerEntitySpawn += byPlayer =>
+                {
+                    if (ClientStartConfigErrors.Count > 0)
+                    {
+                        string list = string.Join(", ", ClientStartConfigErrors);
+                        capi.ShowChatMessage($"<font color=#d0342c><strong>CommonLib:</strong></font> " +
+                            $"Can't load client configs: {list}. " +
+                            $"May cause problems, please check client-main.txt and report it");
+                    }
+                };
             }
 
             void LoadAllConfigs()
@@ -63,9 +90,19 @@ namespace CommonLib.Config
                         }
                         ConfigUtil.SaveConfig(_api, type, config);
                         Configs.Add(type, config);
+                        Mod.Logger.Notification($"Config {type.FullName} loaded successfully");
                     }
                     catch (Exception e)
                     {
+                        if (api.Side == EnumAppSide.Server)
+                        {
+                            ServerStartConfigErrors.Add(type.FullName);
+                        }
+                        else
+                        {
+                            ClientStartConfigErrors.Add(type.FullName);
+                        }
+
                         Mod.Logger.Error($"Take error during load config {type.FullName}, skipped. " +
                             $"May cause problems with this mod further. Error:\n{e}");
                     }

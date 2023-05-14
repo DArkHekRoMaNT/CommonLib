@@ -101,6 +101,8 @@ namespace CommonLib.Config
 
             void OnSyncConfigPacketReceived(SyncConfigPacket packet)
             {
+                Mod.Logger.Debug($"Sync config {packet.Type} from server");
+                Mod.Logger.Debug($"Client configs {string.Join(", ", Configs.Keys.Select(e => e + ""))}");
                 if (Configs.TryGetValue(packet.Type, out object config))
                 {
                     Configs[packet.Type] = ConfigUtil.DeserializeServerPacket(config, packet.Data);

@@ -101,11 +101,14 @@ namespace CommonLib.Config
 
             void OnSyncConfigPacketReceived(SyncConfigPacket packet)
             {
-                Mod.Logger.Debug($"Sync config {packet.Type} from server");
-                Mod.Logger.Debug($"Client configs {string.Join(", ", Configs.Keys.Select(e => e + ""))}");
-                if (Configs.TryGetValue(packet.Type, out object config))
+                Mod.Logger.Debug($"Received config {packet.TypeName} from server");
+                Mod.Logger.Debug($"Client configs {string.Join(", ", Configs.Keys)}");
+
+                Type type = Type.GetType(packet.TypeName);
+
+                if (Configs.TryGetValue(type, out object config))
                 {
-                    Configs[packet.Type] = ConfigUtil.DeserializeServerPacket(config, packet.Data);
+                    Configs[type] = ConfigUtil.DeserializeServerPacket(config, packet.Data);
                 }
             }
         }
@@ -138,7 +141,7 @@ namespace CommonLib.Config
                 if (_serverChannel is not null)
                 {
                     byte[] data = ConfigUtil.SerializeServerPacket(config);
-                    _serverChannel.BroadcastPacket(new SyncConfigPacket(data, config.GetType()));
+                    _serverChannel.BroadcastPacket(new SyncConfigPacket(data, config.GetType().FullName));
                 }
             }
         }
@@ -160,10 +163,10 @@ namespace CommonLib.Config
         [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
         private class SyncConfigPacket
         {
-            public Type Type { get; private set; }
+            public string TypeName { get; private set; }
             public byte[] Data { get; private set; }
-            private SyncConfigPacket() { Data = null!; Type = null!; }
-            public SyncConfigPacket(byte[] data, Type type) { Data = data; Type = type; }
+            private SyncConfigPacket() { Data = null!; TypeName = null!; }
+            public SyncConfigPacket(byte[] data, string typeName) { Data = data; TypeName = typeName; }
         }
     }
 }

@@ -13,8 +13,8 @@ namespace CommonLib.Config
 {
     public class ConfigManager : ModSystem
     {
-        private readonly List<string> ClientStartConfigErrors = new();
-        private readonly List<string> ServerStartConfigErrors = new();
+        private readonly List<string> _clientStartConfigErrors = new();
+        private readonly List<string> _serverStartConfigErrors = new();
 
         private IServerNetworkChannel? _serverChannel;
         private ICoreAPI _api = null!;
@@ -41,10 +41,10 @@ namespace CommonLib.Config
                     .RegisterMessageType<SyncConfigPacket>();
                 sapi.Event.PlayerNowPlaying += byPlayer =>
                 {
-                    if (ServerStartConfigErrors.Count > 0 &&
+                    if (_serverStartConfigErrors.Count > 0 &&
                         byPlayer.Privileges.Contains(Privilege.controlserver))
                     {
-                        string list = string.Join(", ", ServerStartConfigErrors);
+                        string list = string.Join(", ", _serverStartConfigErrors);
                         string text = $"<font color=#d0342c><strong>CommonLib:</strong></font> " +
                             $"Can't load server configs: {list}. " +
                             $"May cause problems, please check server-main.txt and report it";
@@ -62,9 +62,9 @@ namespace CommonLib.Config
                     .SetMessageHandler<SyncConfigPacket>(OnSyncConfigPacketReceived);
                 capi.Event.PlayerEntitySpawn += byPlayer =>
                 {
-                    if (ClientStartConfigErrors.Count > 0)
+                    if (_clientStartConfigErrors.Count > 0)
                     {
-                        string list = string.Join(", ", ClientStartConfigErrors);
+                        string list = string.Join(", ", _clientStartConfigErrors);
                         capi.ShowChatMessage($"<font color=#d0342c><strong>CommonLib:</strong></font> " +
                             $"Can't load client configs: {list}. " +
                             $"May cause problems, please check client-main.txt and report it");
@@ -96,11 +96,11 @@ namespace CommonLib.Config
                     {
                         if (api.Side == EnumAppSide.Server)
                         {
-                            ServerStartConfigErrors.Add(type.FullName);
+                            _serverStartConfigErrors.Add(type.FullName);
                         }
                         else
                         {
-                            ClientStartConfigErrors.Add(type.FullName);
+                            _clientStartConfigErrors.Add(type.FullName);
                         }
 
                         Mod.Logger.Error($"Take error during load config {type.FullName}, skipped. " +

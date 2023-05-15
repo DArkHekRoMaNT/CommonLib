@@ -1,3 +1,4 @@
+using CommonLib.Extensions;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
@@ -76,6 +77,12 @@ namespace CommonLib.Config
             {
                 foreach (Type type in GetAllTypesWithAttribute<ConfigAttribute>())
                 {
+                    if (!api.ModLoader.IsModEnabled(type.Assembly))
+                    {
+                        Mod.Logger.Notification($"Сonfig {type.AssemblyQualifiedName} skipped (mod is not enabled)");
+                        continue;
+                    }
+
                     try
                     {
                         object config = Activator.CreateInstance(type);
@@ -139,9 +146,7 @@ namespace CommonLib.Config
             void OnSyncConfigPacketReceived(SyncConfigPacket packet)
             {
                 Mod.Logger.Notification($"Received config {packet.TypeName} from server");
-
                 Type type = Type.GetType(packet.TypeName, true);
-
                 if (Configs.TryGetValue(type, out object config))
                 {
                     Configs[type] = ConfigUtil.DeserializeServerPacket(config, packet.Data);
@@ -174,10 +179,12 @@ namespace CommonLib.Config
             {
                 ConfigUtil.ValidateConfig(_api, type, ref config, Mod.Logger);
                 ConfigUtil.SaveConfig(_api, type, config);
-                if (_serverChannel is not null)
+                Mod? mod = _api.ModLoader.GetMod(type.Assembly);
+                if (mod?.Info.Side == EnumAppSide.Universal)
                 {
-                    byte[] data = ConfigUtil.SerializeServerPacket(config);
-                    _serverChannel.BroadcastPacket(new SyncConfigPacket(data, config.GetType().AssemblyQualifiedName));
+                    _serverChannel?.BroadcastPacket(new SyncConfigPacket(
+                        ConfigUtil.SerializeServerPacket(config),
+                        config.GetType().AssemblyQualifiedName));
                 }
             }
         }

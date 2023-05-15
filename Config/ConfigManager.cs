@@ -85,25 +85,25 @@ namespace CommonLib.Config
                         }
                         catch (InvalidCastException e)
                         {
-                            Mod.Logger.Error($"Сonfig {type.FullName} looks corrupted, a new one will be created. Error:\n{e}");
+                            Mod.Logger.Error($"Сonfig {type.AssemblyQualifiedName} looks corrupted, a new one will be created. Error:\n{e}");
                             config = Activator.CreateInstance(type);
                         }
                         ConfigUtil.SaveConfig(_api, type, config);
                         Configs.Add(type, config);
-                        Mod.Logger.Notification($"Config {type.FullName} loaded successfully");
+                        Mod.Logger.Notification($"Config {type.AssemblyQualifiedName} loaded successfully");
                     }
                     catch (Exception e)
                     {
                         if (api.Side == EnumAppSide.Server)
                         {
-                            _serverStartConfigErrors.Add(type.FullName);
+                            _serverStartConfigErrors.Add(type.AssemblyQualifiedName);
                         }
                         else
                         {
-                            _clientStartConfigErrors.Add(type.FullName);
+                            _clientStartConfigErrors.Add(type.AssemblyQualifiedName);
                         }
 
-                        Mod.Logger.Error($"Take error during load config {type.FullName}, skipped. " +
+                        Mod.Logger.Error($"Take error during load config {type.AssemblyQualifiedName}, skipped. " +
                             $"May cause problems with this mod further. Error:\n{e}");
                     }
                 }
@@ -138,10 +138,9 @@ namespace CommonLib.Config
 
             void OnSyncConfigPacketReceived(SyncConfigPacket packet)
             {
-                Mod.Logger.Debug($"Received config {packet.TypeName} from server");
-                Mod.Logger.Debug($"Client configs {string.Join(", ", Configs.Keys)}");
+                Mod.Logger.Notification($"Received config {packet.TypeName} from server");
 
-                Type type = Type.GetType(packet.TypeName);
+                Type type = Type.GetType(packet.TypeName, true);
 
                 if (Configs.TryGetValue(type, out object config))
                 {
@@ -178,7 +177,7 @@ namespace CommonLib.Config
                 if (_serverChannel is not null)
                 {
                     byte[] data = ConfigUtil.SerializeServerPacket(config);
-                    _serverChannel.BroadcastPacket(new SyncConfigPacket(data, config.GetType().FullName));
+                    _serverChannel.BroadcastPacket(new SyncConfigPacket(data, config.GetType().AssemblyQualifiedName));
                 }
             }
         }
@@ -194,7 +193,7 @@ namespace CommonLib.Config
             {
                 return value;
             }
-            throw new KeyNotFoundException($"Unknown config type: {type.FullName}");
+            throw new KeyNotFoundException($"Unknown config type: {type.AssemblyQualifiedName}");
         }
 
         [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]

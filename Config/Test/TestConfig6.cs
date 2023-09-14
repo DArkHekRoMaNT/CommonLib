@@ -1,4 +1,5 @@
 #if DEBUG
+
 namespace CommonLib.Config
 {
     [Config("test6.json")]

@@ -16,7 +16,10 @@ namespace CommonLib.Utils
                 n--;
                 int k = rnd.Next(n + 1);
 
-                if (array[k] == ' ' || array[n] == ' ') continue;
+                if (array[k] == ' ' || array[n] == ' ')
+                {
+                    continue;
+                }
 
                 var value = array[k];
 

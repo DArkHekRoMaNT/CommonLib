@@ -84,9 +84,8 @@ namespace CommonLib.Utils
             }
             else
             {
-                api.World.Logger.Chat(playerEntity.GetName() + " trying say: " + msg);
+                api.World.Logger.Chat($"{playerEntity.GetName()} trying say: {msg}");
             }
-
         }
 
         /// <summary>

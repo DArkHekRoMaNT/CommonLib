@@ -1,5 +1,6 @@
 using CommonLib.Utils;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,7 +9,6 @@ using System.Reflection;
 using System.Text;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
-using Newtonsoft.Json.Linq;
 
 namespace CommonLib.Config
 {

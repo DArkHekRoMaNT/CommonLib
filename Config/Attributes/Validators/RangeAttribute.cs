@@ -43,9 +43,11 @@ namespace CommonLib.Config
         }
 
         public object GetMin(Type type) => Convert.ChangeType(_min, type);
+
         public object GetMax(Type type) => Convert.ChangeType(_max, type);
 
         public T GetMin<T>() => (T)GetMin(typeof(T));
+
         public T GetMax<T>() => (T)GetMax(typeof(T));
 
         public override bool IsValid(ICoreAPI api, object? value)

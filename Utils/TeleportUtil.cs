@@ -42,7 +42,7 @@ namespace CommonLib.Utils
 
                 int chunkSize = sapi.WorldManager.ChunkSize;
                 player.Entity.TeleportToDouble(x + 0.5f, sapi.WorldManager.MapSizeY + 2, z + 0.5f);
-                sapi.WorldManager.LoadChunkColumnPriority(x / chunkSize, z / chunkSize, new ChunkLoadOptions()
+                sapi.WorldManager.LoadChunkColumnPriority(x / chunkSize, z / chunkSize, new ChunkLoadOptions
                 {
                     OnLoaded = () =>
                     {

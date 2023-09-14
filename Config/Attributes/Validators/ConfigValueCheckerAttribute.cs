@@ -3,7 +3,6 @@ using Vintagestory.API.Common;
 
 namespace CommonLib.Config
 {
-
     /// <summary>
     /// Base abstract config value converter, use it for custom value presets
     /// </summary>

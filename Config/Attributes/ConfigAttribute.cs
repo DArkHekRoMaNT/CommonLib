@@ -36,7 +36,7 @@ namespace CommonLib.Config
             else
             {
                 Name = filename;
-                Filename = filename + ".json";
+                Filename = $"{filename}.json";
             }
         }
     }

@@ -29,7 +29,7 @@ namespace CommonLib.Config
             if (_api is ICoreServerAPI sapi)
             {
                 _serverChannel = sapi.Network
-                    .RegisterChannel(Mod.Info.ModID + "-config-manager")
+                    .RegisterChannel($"{Mod.Info.ModID}-config-manager")
                     .RegisterMessageType<SyncConfigPacket>();
 
                 sapi.Event.PlayerNowPlaying += byPlayer =>
@@ -55,7 +55,7 @@ namespace CommonLib.Config
             if (_api is ICoreClientAPI capi)
             {
                 capi.Network
-                    .RegisterChannel(Mod.Info.ModID + "-config-manager")
+                    .RegisterChannel($"{Mod.Info.ModID}-config-manager")
                     .RegisterMessageType<SyncConfigPacket>()
                     .SetMessageHandler<SyncConfigPacket>(OnSyncConfigPacketReceived);
 

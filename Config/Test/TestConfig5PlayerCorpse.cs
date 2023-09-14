@@ -1,5 +1,4 @@
 #if DEBUG
-using System.Collections.Generic;
 using Vintagestory.API.Config;
 using Vintagestory.API.Server;
 
@@ -16,7 +15,11 @@ namespace CommonLib.Config
 
         public bool CreateCorpse { get; set; } = true;
 
-        public string[] SaveInventoryTypes { get; set; } = new string[]
+        public string[] SaveInventoryTypes
+        {
+            get;
+            set;
+        } = new string[]
         {
             GlobalConstants.hotBarInvClassName,
             GlobalConstants.backpackInvClassName,

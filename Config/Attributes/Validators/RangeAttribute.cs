@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Vintagestory.API.Common;
 
 namespace CommonLib.Config
@@ -6,7 +7,7 @@ namespace CommonLib.Config
     /// <summary>
     /// Value is numeric from min to max (including them)
     /// </summary>
-    public sealed class RangeAttribute : ValueCheckerAttribute
+    public sealed class RangeAttribute : ConfigValueCheckerAttribute
     {
         private readonly object _min;
         private readonly object _max;
@@ -47,33 +48,22 @@ namespace CommonLib.Config
         public T GetMin<T>() => (T)GetMin(typeof(T));
         public T GetMax<T>() => (T)GetMax(typeof(T));
 
-        public override bool Check(ICoreAPI api, IComparable value)
+        public override bool IsValid(ICoreAPI api, object? value)
         {
+            if (value == null)
+            {
+                return false;
+            }
+
             var min = (IComparable)GetMin(value.GetType());
             var max = (IComparable)GetMax(value.GetType());
-            return value.CompareTo(min) >= 0 && value.CompareTo(max) <= 0;
+
+            return ((IComparable)value).CompareTo(min) >= 0 && ((IComparable)value).CompareTo(max) <= 0;
         }
 
-        public object ClampRange(IComparable value)
+        public override string GetHelpDescription(ICoreAPI api)
         {
-            // lower min value
-            if (value.CompareTo(_min) < 0)
-            {
-                return _min;
-            }
-
-            // greater max value
-            if (value.CompareTo(_max) > 0)
-            {
-                return _max;
-            }
-
-            return value;
-        }
-
-        public override string GetDescription(ICoreAPI api)
-        {
-            return $"{Type} value from {_min} to {_max}";
+            return $"{Type.Name} value from {_min} to {_max}";
         }
     }
 }

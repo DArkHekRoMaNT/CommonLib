@@ -4,7 +4,7 @@ namespace CommonLib.Config
     [Config("test6.json")]
     public class TestConfig6
     {
-        [WaypointName]
+        [WaypointIconName]
         public string WaypointName { get; set; } = "circle";
 
         [HexColor]

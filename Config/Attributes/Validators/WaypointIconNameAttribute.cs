@@ -6,14 +6,14 @@ using Vintagestory.API.Common;
 
 namespace CommonLib.Config
 {
-    public sealed class WaypointNameAttribute : ValueCheckerAttribute
+    public class WaypointIconNameAttribute : ConfigValueCheckerAttribute
     {
-        public override bool Check(ICoreAPI api, IComparable value)
+        public override bool IsValid(ICoreAPI api, object? value)
         {
-            return GetWaypointIcons(api).Any(e => e == (string)value);
+            return value is string str && GetWaypointIcons(api).Any(e => e == str);
         }
 
-        public override string GetDescription(ICoreAPI api)
+        public override string GetHelpDescription(ICoreAPI api)
         {
             return $"Icons: {string.Join(", ", GetWaypointIcons(api))}";
         }

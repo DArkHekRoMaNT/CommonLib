@@ -1,4 +1,5 @@
 #if DEBUG
+using System.Collections.Generic;
 using Vintagestory.API.Config;
 using Vintagestory.API.Server;
 
@@ -32,11 +33,11 @@ namespace CommonLib.Config
         [Range(0, int.MaxValue)]
         public int MaxDeathContentSavedPerPlayer { get; set; } = 10;
 
-        [Description("auto mode will try to resolve conflicts with other mods")]
+        [Description("Auto mode will try to resolve conflicts with other mods")]
         [Strings("auto", "always", "none")]
         public string CreateWaypoint { get; set; } = "auto";
 
-        [Description("circle, bee, cave, home, ladder, pick, rocks, ruins, spiral, star1, star2, trader, vessel, etc")]
+        [WaypointIconName]
         public string WaypointIcon { get; set; } = "bee";
 
         [Description("https://www.99colors.net/dot-net-colors")]

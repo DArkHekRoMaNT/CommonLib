@@ -7,7 +7,7 @@ namespace CommonLib.Config
     /// <summary>
     /// Value is string from list
     /// </summary>
-    public sealed class StringsAttribute : ValueCheckerAttribute
+    public sealed class StringsAttribute : ConfigValueCheckerAttribute
     {
         private readonly string[] _strings;
 
@@ -16,14 +16,14 @@ namespace CommonLib.Config
             _strings = strings;
         }
 
-        public override bool Check(ICoreAPI api, IComparable value)
+        public override bool IsValid(ICoreAPI api, object? value)
         {
-            return _strings.Contains(value);
+            return value is string str && _strings.Contains(str);
         }
 
-        public override string GetDescription(ICoreAPI api)
+        public override string GetHelpDescription(ICoreAPI api)
         {
-            return $"{string.Join(", ", _strings)}";
+            return $"Allowed: {string.Join(", ", _strings)}";
         }
     }
 }

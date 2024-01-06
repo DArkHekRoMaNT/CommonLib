@@ -11,16 +11,6 @@ namespace CommonLib.Extensions
     {
         #region missing parsers
 
-        public static LongArgParser Long(this CommandArgumentParsers parsers, string argName, long defaultValue = 0)
-        {
-            return new LongArgParser(argName, defaultValue, isMandatoryArg: true);
-        }
-
-        public static LongArgParser OptionalLong(this CommandArgumentParsers parsers, string argName, long defaultValue = 0)
-        {
-            return new LongArgParser(argName, defaultValue, isMandatoryArg: false);
-        }
-
         public static LongArgParser LongRange(this CommandArgumentParsers parsers, string argName, long min, long max, long defaultValue = 0)
         {
             return new LongArgParser(argName, min, max, defaultValue, isMandatoryArg: true);
@@ -59,82 +49,6 @@ namespace CommonLib.Extensions
         public static OnlinePlayerArgParser OptionalOnlinePlayer(this CommandArgumentParsers parsers, string argName, ICoreAPI api)
         {
             return new OnlinePlayerArgParser(argName, api, isMandatoryArg: false);
-        }
-
-        public class LongArgParser : ArgumentParserBase
-        {
-            private readonly long min;
-
-            private readonly long max;
-
-            private long value;
-
-            private readonly long defaultValue;
-
-            public LongArgParser(string argName, long min, long max, long defaultValue, bool isMandatoryArg)
-                : base(argName, isMandatoryArg)
-            {
-                this.defaultValue = defaultValue;
-                this.min = min;
-                this.max = max;
-            }
-
-            public override string GetSyntaxExplanation()
-            {
-                return "&nbsp;&nbsp;<i>" + argName + "</i> is an integer number";
-            }
-
-            public LongArgParser(string argName, long defaultValue, bool isMandatoryArg)
-                : base(argName, isMandatoryArg)
-            {
-                this.defaultValue = defaultValue;
-                min = long.MinValue;
-                max = long.MaxValue;
-            }
-
-            public override string[] GetValidRange(CmdArgs args)
-            {
-                return new string[2]
-                {
-                long.MinValue.ToString() ?? "",
-                long.MaxValue.ToString() ?? ""
-                };
-            }
-
-            public override object GetValue()
-            {
-                return value;
-            }
-
-            public override void PreProcess(TextCommandCallingArgs args)
-            {
-                value = defaultValue;
-                base.PreProcess(args);
-            }
-
-            public override EnumParseResult TryProcess(TextCommandCallingArgs args, Action<AsyncParseResults>? onReady = null)
-            {
-                long? num = args.RawArgs.PopLong();
-                if (!num.HasValue)
-                {
-                    lastErrorMessage = Lang.Get("Not a number");
-                    return EnumParseResult.Bad;
-                }
-
-                if (num < min || num > max)
-                {
-                    lastErrorMessage = Lang.Get("Number out of range");
-                    return EnumParseResult.Bad;
-                }
-
-                value = num.Value;
-                return EnumParseResult.Good;
-            }
-
-            public override void SetValue(object data)
-            {
-                value = (long)data;
-            }
         }
 
         public class PlayerArgParser : ArgumentParserBase
@@ -205,9 +119,7 @@ namespace CommonLib.Extensions
         public class FixedBoolArgParser : ArgumentParserBase
         {
             private bool value;
-
             private bool defaultValue;
-
             private string trueAlias;
 
             public FixedBoolArgParser(string argName, bool defaultValue, string trueAlias, bool isMandatoryArg)
@@ -217,9 +129,9 @@ namespace CommonLib.Extensions
                 this.trueAlias = trueAlias;
             }
 
-            public override string GetSyntaxExplanation()
+            public override string GetSyntaxExplanation(string indent)
             {
-                return "&nbsp;&nbsp;<i>" + argName + "</i> is a boolean, including 1 or 0, yes or no, true or false, or " + trueAlias;
+                return indent + GetSyntax() + " is a boolean, including 1 or 0, yes or no, true or false, or " + trueAlias;
             }
 
             public override object GetValue()

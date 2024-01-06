@@ -8,6 +8,7 @@
 		<GameVersion>1.19.0-rc.5</GameVersion>
 		<RequiredOnClient>false</RequiredOnClient>
 		<RequiredOnServer>false</RequiredOnServer>
+		<NoLang>true</NoLang>
 	</PropertyGroup>
 	<ItemGroup>
 		<IncludeFiles Include="modicon.png" />

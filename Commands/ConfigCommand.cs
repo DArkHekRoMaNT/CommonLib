@@ -3,6 +3,7 @@ using CommonLib.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
@@ -14,14 +15,14 @@ namespace CommonLib.Commands
         public static void Create(ICoreAPI api, ILogger logger)
         {
             var manager = api.ModLoader.GetModSystem<ConfigManager>();
-            var command = api.ChatCommands
+            var configCommand = api.ChatCommands
                 .GetOrCreate("cl")
                 .BeginSubCommand("config")
                     .WithRootAlias("config")
                     .WithDescription("Runtime config editor for some mods using CommonLib")
-                    .RequiresPrivilege(Privilege.controlserver);
+                    .RequiresPrivilege(api is ICoreServerAPI ? Privilege.controlserver : Privilege.chat);
 
-            foreach (KeyValuePair<Type, object> configByType in manager.Configs)
+            foreach (var configByType in manager.Configs)
             {
                 var type = configByType.Key;
                 var config = configByType.Value;
@@ -29,13 +30,31 @@ namespace CommonLib.Commands
 
                 if (!string.IsNullOrWhiteSpace(configName))
                 {
-                    var subCommand = command.BeginSubCommand(configName);
+                    var props = ConfigUtil.GetConfigProperties(type);
 
-                    foreach (PropertyInfo prop in ConfigUtil.GetConfigProperties(type))
+                    bool hasCommands = false;
+                    foreach (PropertyInfo prop in props)
                     {
+                        if (ShowOnThisSide(prop, api))
+                        {
+                            hasCommands = true;
+                            break;
+                        }
+                    }
+
+                    if (!hasCommands)
+                        continue;
+
+                    var subCommand = configCommand.BeginSubCommand(configName);
+
+                    foreach (PropertyInfo prop in props)
+                    {
+                        if (!ShowOnThisSide(prop, api))
+                            continue;
+
                         subCommand
                             .BeginSubCommand(prop.Name)
-                                .WithArgs(GetParser("value", prop))
+                                .WithArgs(GetParser("value", prop, api))
                                 .HandleWith(args => OnShowOrSetEntry(type, prop, args))
                             .EndSubCommand();
                     }
@@ -43,7 +62,13 @@ namespace CommonLib.Commands
                     subCommand.EndSubCommand();
                 }
             }
-            command.EndSubCommand();
+
+            if (!configCommand.Subcommands.Any())
+            {
+                configCommand.HandleWith(_ => TextCommandResult.Success("No configs"));
+            }
+
+            configCommand.EndSubCommand();
 
             TextCommandResult OnShowOrSetEntry(Type configType, PropertyInfo prop, TextCommandCallingArgs args)
             {
@@ -77,50 +102,63 @@ namespace CommonLib.Commands
                     return TextCommandResult.Success($"Set value {value} to {args.SubCmdCode}");
                 }
             }
+        }
 
-            ICommandArgumentParser GetParser(string name, PropertyInfo prop)
+        private static bool ShowOnThisSide(PropertyInfo prop, ICoreAPI api)
+        {
+            bool clientOnly = prop.GetCustomAttribute<ClientOnlyAttribute>() != null;
+
+            if (clientOnly && api.Side == EnumAppSide.Server)
+                return false;
+
+            if (!clientOnly && api.Side == EnumAppSide.Client)
+                return false;
+
+            return true;
+        }
+
+        private static ICommandArgumentParser GetParser(string name, PropertyInfo prop, ICoreAPI api)
+        {
+            var parsers = api.ChatCommands.Parsers;
+            var rangeAttr = prop.GetCustomAttribute<RangeAttribute>();
+            switch (prop.PropertyType.Name)
             {
-                var parsers = api.ChatCommands.Parsers;
-                var rangeAttr = prop.GetCustomAttribute<RangeAttribute>();
-                switch (prop.PropertyType.Name)
-                {
-                    case nameof(Int32):
-                        if (rangeAttr is not null)
-                        {
-                            return parsers.OptionalIntRange(name, rangeAttr.GetMin<int>(), rangeAttr.GetMax<int>());
-                        }
-                        return parsers.OptionalInt(name);
+                case nameof(Int32):
+                    if (rangeAttr is not null)
+                    {
+                        return parsers.OptionalIntRange(name, rangeAttr.GetMin<int>(), rangeAttr.GetMax<int>());
+                    }
+                    return parsers.OptionalInt(name);
 
-                    case nameof(Int64):
-                        if (rangeAttr is not null)
-                        {
-                            return parsers.OptionalLongRange(name, rangeAttr.GetMin<long>(), rangeAttr.GetMax<long>());
-                        }
-                        return parsers.OptionalLong(name);
+                case nameof(Int64):
+                    if (rangeAttr is not null)
+                    {
+                        return parsers.OptionalLongRange(name, rangeAttr.GetMin<long>(), rangeAttr.GetMax<long>());
+                    }
+                    return parsers.OptionalLong(name);
 
-                    case nameof(Single):
-                        if (rangeAttr is not null)
-                        {
-                            return parsers.OptionalFloatRange(name, rangeAttr.GetMin<float>(), rangeAttr.GetMax<float>());
-                        }
-                        return parsers.OptionalFloat(name);
+                case nameof(Single):
+                    if (rangeAttr is not null)
+                    {
+                        return parsers.OptionalFloatRange(name, rangeAttr.GetMin<float>(), rangeAttr.GetMax<float>());
+                    }
+                    return parsers.OptionalFloat(name);
 
-                    case nameof(Double):
-                        if (rangeAttr is not null)
-                        {
-                            return parsers.OptionalDoubleRange(name, rangeAttr.GetMin<double>(), rangeAttr.GetMax<double>());
-                        }
-                        return parsers.OptionalDouble(name);
+                case nameof(Double):
+                    if (rangeAttr is not null)
+                    {
+                        return parsers.OptionalDoubleRange(name, rangeAttr.GetMin<double>(), rangeAttr.GetMax<double>());
+                    }
+                    return parsers.OptionalDouble(name);
 
-                    case nameof(Boolean):
-                        return parsers.OptionalBool(name);
+                case nameof(Boolean):
+                    return parsers.OptionalBool(name);
 
-                    case nameof(String):
-                        return parsers.OptionalWord(name);
-                }
-
-                return parsers.Unparsed(name);
+                case nameof(String):
+                    return parsers.OptionalWord(name);
             }
+
+            return parsers.Unparsed(name);
         }
     }
 }

@@ -16,19 +16,19 @@ namespace CommonLib.Commands
                     .WithArgs(parsers.OptionalIntRange("range", 0, int.MaxValue))
                     .RequiresPlayer()
                     .RequiresPrivilege(Privilege.tp)
-                    .HandleWith(TeleportPlayerRandomly)
+                    .HandleWith(args => TeleportPlayerRandomly(args, logger))
                 .EndSubCommand();
         }
 
-        private static TextCommandResult TeleportPlayerRandomly(TextCommandCallingArgs args)
+        private static TextCommandResult TeleportPlayerRandomly(TextCommandCallingArgs args, ILogger logger)
         {
             int range = (int)args[0];
             var player = (IServerPlayer)args.Caller.Player;
             TeleportUtil.RandomTeleport(player, new()
             {
-                Range = range > 0 ? range : -1,
-            });
-            return TextCommandResult.Success();
+                Range = range > 0 ? range : -1
+            }, logger);
+            return TextCommandResult.Deferred;
         }
     }
 }

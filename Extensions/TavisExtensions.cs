@@ -29,7 +29,7 @@ namespace CommonLib.Extensions
         /// </summary>
         /// <param name="api">The core API used by the game, on both the client, and the server.</param>
         /// <param name="patch">The patch to apply.</param>
-        public static void ApplyJsonPatch(this ICoreAPI api, JsonPatch patch)
+        public static void ApplyJsonPatch(this ICoreAPI api, Vintagestory.ServerMods.NoObf.JsonPatch patch)
         {
             // Still using these awkward pass by reference dummy values.
             // Ideally, the part of the method that actually adds the patch should be extracted.
@@ -42,7 +42,7 @@ namespace CommonLib.Extensions
         /// </summary>
         /// <param name="api">The core API used by the game, on both the client, and the server.</param>
         /// <param name="patches">The patches to apply.</param>
-        public static void ApplyJsonPatches(this ICoreAPI api, IEnumerable<JsonPatch> patches)
+        public static void ApplyJsonPatches(this ICoreAPI api, IEnumerable<Vintagestory.ServerMods.NoObf.JsonPatch> patches)
         {
             var jsonPatcher = api.ModLoader.GetModSystem<ModJsonPatchLoader>();
             foreach (var patch in patches)

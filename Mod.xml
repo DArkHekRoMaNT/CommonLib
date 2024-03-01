@@ -2,12 +2,13 @@
 	<PropertyGroup>
 		<Name>CommonLib</Name>
 		<ModId>commonlib</ModId>
-		<Version>2.3.4</Version>
+		<Version>2.3.5</Version>
 		<Authors>DArkHekRoMaNT</Authors>
-		<MinimalGameVersion>1.19.4-rc.1</MinimalGameVersion>
-		<GameVersion>1.19.4-rc.1</GameVersion>
-		<RequiredOnClient>false</RequiredOnClient>
-		<RequiredOnServer>false</RequiredOnServer>
+		<MinimalGameVersion>1.19.4</MinimalGameVersion>
+		<GameVersion>1.19.4</GameVersion>
+		<!--Don't work correctly-->
+		<!--RequiredOnClient>false</RequiredOnClient>
+		<RequiredOnServer>false</RequiredOnServer-->
 		<NoLang>true</NoLang>
 	</PropertyGroup>
 	<ItemGroup>

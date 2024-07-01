@@ -6,9 +6,7 @@
 		<Authors>DArkHekRoMaNT</Authors>
 		<MinimalGameVersion>1.19.4</MinimalGameVersion>
 		<GameVersion>1.19.8</GameVersion>
-		<!--Don't work correctly-->
-		<!--RequiredOnClient>false</RequiredOnClient>
-		<RequiredOnServer>false</RequiredOnServer-->
+		<RequiredOnServer>false</RequiredOnServer>
 		<NoLang>true</NoLang>
 	</PropertyGroup>
 	<ItemGroup>

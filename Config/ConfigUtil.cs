@@ -4,6 +4,7 @@ using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using Vintagestory.API.Common;
@@ -20,13 +21,13 @@ namespace CommonLib.Config
 
             foreach (var prop in GetConfigProperties(type))
             {
+                var defaultValue = prop.GetValue(defaultConfig);
                 if (jsonConfig.TryGetValue(prop.Name, out var element))
                 {
-                    prop.SetValue(config, ConvertType(element.Value, prop.PropertyType));
+                    prop.SetValue(config, ConvertType(element.Value, prop.PropertyType, defaultValue));
                 }
                 else
                 {
-                    var defaultValue = prop.GetValue(defaultConfig);
                     prop.SetValue(config, defaultValue);
                 }
             }
@@ -156,44 +157,54 @@ namespace CommonLib.Config
             {
                 if (dict.TryGetValue(prop.Name, out var value))
                 {
-                    prop.SetValue(config, ConvertType(value, prop.PropertyType));
+                    prop.SetValue(config, ConvertType(value, prop.PropertyType, null));
                 }
             }
             return config;
         }
 
-        public static object ConvertType(object value, Type type)
+        public static object ConvertType(object value, Type type, object? defaultValue)
         {
-            if (type.IsArray)
+            try
             {
-                var list = (IList)value;
-                var elementType = type.GetElementType();
-                var convertedArray = Array.CreateInstance(elementType, list.Count);
-                for (int i = 0; i < list.Count; i++)
+                if (type.IsArray)
                 {
-                    var element = Convert.ChangeType(list[i], elementType);
-                    convertedArray.SetValue(element, i);
-                }
-                return convertedArray;
-            }
-            else if (type.IsEnum)
-            {
-                if (value is string stringValue)
-                {
-                    if (Enum.TryParse(type, stringValue, out var enumValue))
+                    var list = (IList)value;
+                    var elementType = type.GetElementType();
+                    var convertedArray = Array.CreateInstance(elementType, list.Count);
+                    for (int i = 0; i < list.Count; i++)
                     {
-                        return enumValue;
+                        var element = Convert.ChangeType(list[i], elementType);
+                        convertedArray.SetValue(element, i);
                     }
-                    throw new InvalidCastException("Wrong enum value");
+                    return convertedArray;
+                }
+                else if (type.IsEnum)
+                {
+                    if (value is string stringValue)
+                    {
+                        if (Enum.TryParse(type, stringValue, out var enumValue))
+                        {
+                            return enumValue;
+                        }
+                        throw new InvalidCastException("Wrong enum value");
+                    }
+                    else
+                    {
+                        return Enum.ToObject(type, value);
+                    }
                 }
                 else
                 {
-                    return Enum.ToObject(type, value);
+                    return Convert.ChangeType(value, type);
                 }
             }
-            else
+            catch (Exception)
             {
-                return Convert.ChangeType(value, type);
+                Debugger.Break();
+                if (defaultValue == null)
+                    throw;
+                return defaultValue;
             }
         }
 

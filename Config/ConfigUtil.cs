@@ -14,27 +14,19 @@ namespace CommonLib.Config
     {
         public static object LoadConfig(ICoreAPI api, Type type, ref object config, ILogger logger)
         {
-            logger ??= api.Logger;
+            var configAttr = type.GetCustomAttribute<ConfigAttribute>() ?? throw new ArgumentException($"{type} is not a config");
+            var jsonConfig = api.LoadOrCreateConfig(configAttr.Filename, logger ?? api.Logger, new Dictionary<string, JsonConfigValue<object>>()) ?? [];
+            var defaultConfig = Activator.CreateInstance(type);
 
-            var configAttr = type.GetCustomAttribute<ConfigAttribute>()
-                ?? throw new ArgumentException($"{type} is not a config");
-
-            Dictionary<string, JsonConfigValue<object>> jsonConfig = new();
-            string filename = configAttr.Filename;
-
-            jsonConfig = api.LoadOrCreateConfig(filename, logger, jsonConfig) ?? new();
-
-            object defaultConfig = Activator.CreateInstance(type);
-
-            foreach (PropertyInfo prop in GetConfigProperties(type))
+            foreach (var prop in GetConfigProperties(type))
             {
-                if (jsonConfig.TryGetValue(prop.Name, out JsonConfigValue<object> element))
+                if (jsonConfig.TryGetValue(prop.Name, out var element))
                 {
                     prop.SetValue(config, ConvertType(element.Value, prop.PropertyType));
                 }
                 else
                 {
-                    object defaultValue = prop.GetValue(defaultConfig);
+                    var defaultValue = prop.GetValue(defaultConfig);
                     prop.SetValue(config, defaultValue);
                 }
             }
@@ -44,59 +36,58 @@ namespace CommonLib.Config
 
         public static void SaveConfig(ICoreAPI api, Type type, object config)
         {
-            var configAttr = type.GetCustomAttribute<ConfigAttribute>()
-                ?? throw new ArgumentException($"{type} is not a config");
+            var configAttr = type.GetCustomAttribute<ConfigAttribute>() ?? throw new ArgumentException($"{type} is not a config");
+            var jsonConfig = new Dictionary<string, object>();
+            var defaultConfig = Activator.CreateInstance(type);
 
-            Dictionary<string, object> jsonConfig = new();
-
-            object defaultConfig = Activator.CreateInstance(type);
-
-            foreach (PropertyInfo prop in GetConfigProperties(type))
+            foreach (var prop in GetConfigProperties(type))
             {
-                object value = prop.GetValue(config);
+                var value = prop.GetValue(config);
 
-                Type itemType = typeof(JsonConfigValue<>).MakeGenericType(typeof(object));
+                if (value is Enum valueEnum)
+                {
+                    value = valueEnum.ToString();
+                }
 
-                object defaultValue = prop.GetValue(defaultConfig);
-                object item = Activator.CreateInstance(itemType, value, defaultValue);
+                var defaultValue = prop.GetValue(defaultConfig);
+                var jsonItemType = typeof(JsonConfigValue<>).MakeGenericType(typeof(object));
+                var jsonItem = Activator.CreateInstance(jsonItemType, value, defaultValue)!;
 
                 var descAttr = prop.GetCustomAttribute<DescriptionAttribute>();
                 if (descAttr is not null)
                 {
-                    string name = nameof(JsonConfigValue<object>.Description);
-                    PropertyInfo desc = itemType.GetProperty(name);
-                    desc.SetValue(item, descAttr.Text);
+                    var desc = jsonItemType.GetProperty(nameof(JsonConfigValue<object>.Description))!;
+                    desc.SetValue(jsonItem, descAttr.Text);
                 }
 
                 var checkerAttr = prop.GetCustomAttribute<ValueCheckerAttribute>();
                 if (checkerAttr is not null)
                 {
-                    string name = nameof(JsonConfigValue<object>.Limits);
-                    PropertyInfo limits = itemType.GetProperty(name);
-                    limits.SetValue(item, checkerAttr.GetDescription(api));
+                    var limits = jsonItemType.GetProperty(nameof(JsonConfigValue<object>.Limits))!;
+                    limits.SetValue(jsonItem, checkerAttr.GetDescription(api));
                 }
 
-                jsonConfig.Add(prop.Name, item);
+                jsonConfig.Add(prop.Name, jsonItem);
             }
 
-            string filename = configAttr.Filename;
-            api.StoreModConfig(jsonConfig, filename);
+            api.StoreModConfig(jsonConfig, configAttr.Filename);
         }
 
         public static void ValidateConfig(ICoreAPI api, Type type, ref object config, ILogger logger)
         {
-            object defaultConfig = Activator.CreateInstance(type);
-            foreach (PropertyInfo prop in GetConfigProperties(type))
+            var defaultConfig = Activator.CreateInstance(type);
+
+            foreach (var prop in GetConfigProperties(type))
             {
                 var checkerAttr = prop.GetCustomAttribute<ValueCheckerAttribute>();
-                if (checkerAttr is not null)
+                if (checkerAttr != null)
                 {
-                    object value = prop.GetValue(config);
+                    var value = prop.GetValue(config);
                     if (!checkerAttr.Check(api, (IComparable)value))
                     {
                         if (checkerAttr is RangeAttribute rangeAttr)
                         {
-                            object clampedValue = rangeAttr.ClampRange((IComparable)value);
+                            var clampedValue = rangeAttr.ClampRange((IComparable)value);
                             if (clampedValue != value)
                             {
                                 logger.Warning($"{type.FullName}.{prop.Name} value {value} out of bounds, set to {clampedValue}");
@@ -105,7 +96,7 @@ namespace CommonLib.Config
                         }
                         else
                         {
-                            object defaultValue = prop.GetValue(defaultConfig);
+                            var defaultValue = prop.GetValue(defaultConfig);
                             logger.Warning($"{type.FullName}.{prop.Name} value {value} unlimited, set to default {defaultValue}");
                             prop.SetValue(config, defaultValue);
                         }
@@ -117,19 +108,20 @@ namespace CommonLib.Config
 
         public static IEnumerable<PropertyInfo> GetConfigProperties(Type type)
         {
-            var configAttr = type.GetCustomAttribute<ConfigAttribute>();
-            foreach (PropertyInfo prop in type.GetProperties())
+            var configAttr = type.GetCustomAttribute<ConfigAttribute>() ?? throw new ArgumentException($"{type} is not a config");
+
+            foreach (var prop in type.GetProperties())
             {
                 if (configAttr.UseAllPropertiesByDefault)
                 {
-                    if (prop.GetCustomAttribute<ConfigIgnoreAttribute>() is null)
+                    if (prop.GetCustomAttribute<ConfigIgnoreAttribute>() == null)
                     {
                         yield return prop;
                     }
                 }
                 else
                 {
-                    if (prop.GetCustomAttribute<ConfigPropertyAttribute>() is not null)
+                    if (prop.GetCustomAttribute<ConfigPropertyAttribute>() != null)
                     {
                         yield return prop;
                     }
@@ -140,24 +132,24 @@ namespace CommonLib.Config
         public static byte[] SerializeServerPacket(object config)
         {
             var dict = new Dictionary<string, object>();
-            foreach (PropertyInfo prop in GetConfigProperties(config.GetType()))
+            foreach (var prop in GetConfigProperties(config.GetType()))
             {
-                if (prop.GetCustomAttribute<ClientOnlyAttribute>() is null)
+                if (prop.GetCustomAttribute<ClientOnlyAttribute>() == null)
                 {
-                    dict.Add(prop.Name, prop.GetValue(config));
+                    dict.Add(prop.Name, prop.GetValue(config)!);
                 }
             }
-            string json = JsonConvert.SerializeObject(dict);
+            var json = JsonConvert.SerializeObject(dict);
             return Encoding.UTF8.GetBytes(json);
         }
 
         public static object DeserializeServerPacket(object config, byte[] data)
         {
-            string json = Encoding.UTF8.GetString(data);
-            var dict = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
-            foreach (PropertyInfo prop in GetConfigProperties(config.GetType()))
+            var json = Encoding.UTF8.GetString(data);
+            var dict = JsonConvert.DeserializeObject<Dictionary<string, object>>(json)!;
+            foreach (var prop in GetConfigProperties(config.GetType()))
             {
-                if (dict.TryGetValue(prop.Name, out object value))
+                if (dict.TryGetValue(prop.Name, out var value))
                 {
                     prop.SetValue(config, ConvertType(value, prop.PropertyType));
                 }
@@ -170,14 +162,25 @@ namespace CommonLib.Config
             if (type.IsArray)
             {
                 var list = (IList)value;
-                Type elementType = type.GetElementType();
-                Array convertedArray = Array.CreateInstance(elementType, list.Count);
+                var elementType = type.GetElementType();
+                var convertedArray = Array.CreateInstance(elementType, list.Count);
                 for (int i = 0; i < list.Count; i++)
                 {
-                    object element = Convert.ChangeType(list[i], elementType);
+                    var element = Convert.ChangeType(list[i], elementType);
                     convertedArray.SetValue(element, i);
                 }
                 return convertedArray;
+            }
+            else if (type.IsEnum)
+            {
+                if (value is string stringValue)
+                {
+                    return Enum.Parse(type, stringValue);
+                }
+                else
+                {
+                    return Enum.ToObject(type, value);
+                }
             }
             else
             {
@@ -185,7 +188,7 @@ namespace CommonLib.Config
             }
         }
 
-        private class JsonConfigValue<T>
+        private class JsonConfigValue<T>(T value, T defaultValue)
         {
             [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
             public string? Description { get; set; }
@@ -193,15 +196,9 @@ namespace CommonLib.Config
             [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
             public string? Limits { get; set; }
 
-            public T Default { get; }
+            public T Default { get; } = defaultValue;
 
-            public T Value { get; }
-
-            public JsonConfigValue(T value, T defaultValue)
-            {
-                Value = value;
-                Default = defaultValue;
-            }
+            public T Value { get; } = value;
         }
     }
 }

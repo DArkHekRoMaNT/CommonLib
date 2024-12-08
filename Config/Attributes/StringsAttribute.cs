@@ -7,23 +7,18 @@ namespace CommonLib.Config
     /// <summary>
     /// Value is string from list
     /// </summary>
-    public sealed class StringsAttribute : ValueCheckerAttribute
+    public sealed class StringsAttribute(params string[] values) : ValueCheckerAttribute
     {
-        private readonly string[] _strings;
-
-        public StringsAttribute(params string[] strings)
-        {
-            _strings = strings;
-        }
+        public string[] Values { get; } = values;
 
         public override bool Check(ICoreAPI api, IComparable value)
         {
-            return _strings.Contains(value);
+            return Values.Contains(value);
         }
 
         public override string GetDescription(ICoreAPI api)
         {
-            return $"{string.Join(", ", _strings)}";
+            return $"{string.Join(", ", Values)}";
         }
     }
 }

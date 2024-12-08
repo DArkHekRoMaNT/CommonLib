@@ -32,7 +32,7 @@ namespace CommonLib.Commands
                 {
                     var props = ConfigUtil.GetConfigProperties(type);
 
-                    bool hasCommands = false;
+                    var hasCommands = false;
                     foreach (PropertyInfo prop in props)
                     {
                         if (ShowOnThisSide(prop, api))
@@ -72,15 +72,15 @@ namespace CommonLib.Commands
 
             TextCommandResult OnShowOrSetEntry(Type configType, PropertyInfo prop, TextCommandCallingArgs args)
             {
-                object config = manager.GetConfig(configType);
+                var config = manager.GetConfig(configType);
                 if (args.Parsers[0].IsMissing)
                 {
                     if (prop.PropertyType.IsArray)
                     {
                         var list = new List<string>();
-                        foreach (var value in (IEnumerable)prop.GetValue(config))
+                        foreach (var value in (IEnumerable)prop.GetValue(config)!)
                         {
-                            list.Add(value.ToString());
+                            list.Add(value?.ToString() ?? "null");
                         }
                         return TextCommandResult.Success($"{prop.Name}: [ {string.Join(", ", list)} ]");
                     }
@@ -88,15 +88,21 @@ namespace CommonLib.Commands
                 }
                 else
                 {
-                    object value = args.LastArg;
+                    var value = args.LastArg;
                     var checkerAttr = prop.GetCustomAttribute<ValueCheckerAttribute>();
-                    if (checkerAttr is not null)
+                    if (checkerAttr != null)
                     {
                         if (!checkerAttr.Check(api, (IComparable)value))
                         {
                             return TextCommandResult.Error($"Invalid value. {checkerAttr.GetDescription(api)}");
                         }
                     }
+
+                    if (prop.PropertyType.IsEnum)
+                    {
+                        value = Enum.Parse(prop.PropertyType, (string)value);
+                    }
+
                     prop.SetValue(config, value);
                     manager.MarkConfigDirty(configType);
                     return TextCommandResult.Success($"Set value {value} to {args.SubCmdCode}");
@@ -106,13 +112,17 @@ namespace CommonLib.Commands
 
         private static bool ShowOnThisSide(PropertyInfo prop, ICoreAPI api)
         {
-            bool clientOnly = prop.GetCustomAttribute<ClientOnlyAttribute>() != null;
+            var clientOnly = prop.GetCustomAttribute<ClientOnlyAttribute>() != null;
 
             if (clientOnly && api.Side == EnumAppSide.Server)
+            {
                 return false;
+            }
 
             if (!clientOnly && api.Side == EnumAppSide.Client)
+            {
                 return false;
+            }
 
             return true;
         }
@@ -155,7 +165,20 @@ namespace CommonLib.Commands
                     return parsers.OptionalBool(name);
 
                 case nameof(String):
-                    return parsers.OptionalWord(name);
+                    var stringsAttr = prop.GetCustomAttribute<StringsAttribute>();
+                    if (stringsAttr != null)
+                    {
+                        return parsers.OptionalWordRange(name, stringsAttr.Values);
+                    }
+                    else
+                    {
+                        return parsers.OptionalWord(name);
+                    }
+            }
+
+            if (prop.PropertyType.IsEnum)
+            {
+                return parsers.OptionalWordRange(name, Enum.GetNames(prop.PropertyType));
             }
 
             return parsers.Unparsed(name);

@@ -95,25 +95,17 @@ namespace CommonLib.Extensions
 
         public static void ImportToWorldEdit(this BlockSchematic schematic, IServerPlayer player)
         {
-            var we = player.Entity.Api.ModLoader.GetModSystem<WorldEdit>();
-            if (we.CanUseWorldEdit(player, true))
+            var api = player.Entity.Api;
+            var worldEdit = api.ModLoader.GetModSystem<WorldEdit>();
+            if (WorldEdit.CanUseWorldEdit(player, true))
             {
-                FieldInfo toolFieldInfo = typeof(WorldEditWorkspace)
-                    .GetField("ToolInstance", BindingFlags.NonPublic | BindingFlags.Instance);
+                var clipboardBlockDataField = typeof(WorldEditWorkspace).GetField("clipboardBlockData", BindingFlags.Instance | BindingFlags.NonPublic);
+                var workSpace = worldEdit.GetWorkSpace(player.PlayerUID);
+                clipboardBlockDataField?.SetValue(workSpace, schematic);
 
-                FieldInfo clipboardFieldInfo = typeof(WorldEditWorkspace)
-                    .GetField("clipboardBlockData", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                var workspace = we.GetWorkSpace(player.PlayerUID);
-                workspace.ToolsEnabled = true;
-                workspace.SetTool("Import", player.Entity.Api);
-
-                clipboardFieldInfo.SetValue(workspace, schematic);
-                var tool = (ImportTool)toolFieldInfo.GetValue(workspace);
-
-                tool.OnWorldEditCommand(we, new CmdArgs("imc"));
-
-                we.SendPlayerWorkSpace(player.PlayerUID);
+                var caller = new Caller() { Player = player };
+                api.ChatCommands.ExecuteUnparsed("/we tool import", new TextCommandCallingArgs() { Caller = caller });
+                api.ChatCommands.ExecuteUnparsed("/we imc", new TextCommandCallingArgs() { Caller = caller });
             }
         }
     }

@@ -18,7 +18,7 @@ namespace CommonLib.Config
 
         public override string GetDescription(ICoreAPI api)
         {
-            return $"{string.Join(", ", Values)}";
+            return $"One of: {string.Join(", ", Values)}";
         }
     }
 }

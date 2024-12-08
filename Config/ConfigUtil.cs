@@ -43,28 +43,33 @@ namespace CommonLib.Config
             foreach (var prop in GetConfigProperties(type))
             {
                 var value = prop.GetValue(config);
+                var defaultValue = prop.GetValue(defaultConfig);
 
-                if (value is Enum valueEnum)
+                if (value is Enum valueEnum && defaultValue is Enum defaultValueEnum)
                 {
                     value = valueEnum.ToString();
+                    defaultValue = defaultValueEnum.ToString();
                 }
 
-                var defaultValue = prop.GetValue(defaultConfig);
                 var jsonItemType = typeof(JsonConfigValue<>).MakeGenericType(typeof(object));
                 var jsonItem = Activator.CreateInstance(jsonItemType, value, defaultValue)!;
+                var desc = jsonItemType.GetProperty(nameof(JsonConfigValue<object>.Description))!;
+                var limits = jsonItemType.GetProperty(nameof(JsonConfigValue<object>.Limits))!;
 
                 var descAttr = prop.GetCustomAttribute<DescriptionAttribute>();
-                if (descAttr is not null)
+                if (descAttr != null)
                 {
-                    var desc = jsonItemType.GetProperty(nameof(JsonConfigValue<object>.Description))!;
                     desc.SetValue(jsonItem, descAttr.Text);
                 }
 
                 var checkerAttr = prop.GetCustomAttribute<ValueCheckerAttribute>();
-                if (checkerAttr is not null)
+                if (checkerAttr != null)
                 {
-                    var limits = jsonItemType.GetProperty(nameof(JsonConfigValue<object>.Limits))!;
                     limits.SetValue(jsonItem, checkerAttr.GetDescription(api));
+                }
+                else if (prop.PropertyType.IsEnum)
+                {
+                    limits.SetValue(jsonItem, $"One of: {string.Join(", ", Enum.GetNames(prop.PropertyType))}");
                 }
 
                 jsonConfig.Add(prop.Name, jsonItem);

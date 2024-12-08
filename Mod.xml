@@ -2,10 +2,10 @@
 	<PropertyGroup>
 		<Name>CommonLib</Name>
 		<ModId>commonlib</ModId>
-		<Version>2.5.0-rc.2</Version>
+		<Version>2.6.0</Version>
 		<Authors>DArkHekRoMaNT</Authors>
-		<MinimalGameVersion>1.19.4</MinimalGameVersion>
-		<GameVersion>1.19.8</GameVersion>
+		<MinimalGameVersion>1.20.0-rc.1</MinimalGameVersion>
+		<GameVersion>1.20.0-rc.1</GameVersion>
 		<RequiredOnServer>false</RequiredOnServer>
 		<NoLang>true</NoLang>
 	</PropertyGroup>

@@ -180,7 +180,11 @@ namespace CommonLib.Config
             {
                 if (value is string stringValue)
                 {
-                    return Enum.Parse(type, stringValue);
+                    if (Enum.TryParse(type, stringValue, out var enumValue))
+                    {
+                        return enumValue;
+                    }
+                    throw new InvalidCastException("Wrong enum value");
                 }
                 else
                 {

@@ -78,7 +78,13 @@ namespace CommonLib.Commands
                     if (prop.PropertyType.IsArray)
                     {
                         var list = new List<string>();
-                        foreach (var value in (IEnumerable)prop.GetValue(config)!)
+                        var propValue = prop.GetValue(config);
+                        if (propValue is not IEnumerable enumerable)
+                        {
+                            api.Logger.Error("ConfigCommand: property {0}.{1} expected array value, got {2}.", configType.FullName, prop.Name, propValue?.GetType().FullName ?? "null");
+                            return TextCommandResult.Success($"{prop.Name}: null");
+                        }
+                        foreach (var value in enumerable)
                         {
                             list.Add(value?.ToString() ?? "null");
                         }
@@ -92,7 +98,13 @@ namespace CommonLib.Commands
                     var checkerAttr = prop.GetCustomAttribute<ValueCheckerAttribute>();
                     if (checkerAttr != null)
                     {
-                        if (!checkerAttr.Check(api, (IComparable)value))
+                        if (value is not IComparable comparableValue)
+                        {
+                            api.Logger.Error("ConfigCommand: value for {0}.{1} is not comparable (type={2}).", configType.FullName, prop.Name, value?.GetType().FullName ?? "null");
+                            return TextCommandResult.Error("Invalid value type.");
+                        }
+
+                        if (!checkerAttr.Check(api, comparableValue))
                         {
                             return TextCommandResult.Error($"Invalid value. {checkerAttr.GetDescription(api)}");
                         }
@@ -100,10 +112,28 @@ namespace CommonLib.Commands
 
                     if (prop.PropertyType.IsEnum)
                     {
-                        value = Enum.Parse(prop.PropertyType, (string)value);
+                        try
+                        {
+                            value = Enum.Parse(prop.PropertyType, (string)value);
+                        }
+                        catch (Exception e)
+                        {
+                            api.Logger.Error("ConfigCommand: invalid enum value for {0}.{1}.", configType.FullName, prop.Name);
+                            api.Logger.Error(e);
+                            return TextCommandResult.Error("Invalid enum value.");
+                        }
                     }
 
-                    prop.SetValue(config, value);
+                    try
+                    {
+                        prop.SetValue(config, value);
+                    }
+                    catch (Exception e)
+                    {
+                        api.Logger.Error("ConfigCommand: failed to set {0}.{1} to {2}.", configType.FullName, prop.Name, value);
+                        api.Logger.Error(e);
+                        return TextCommandResult.Error("Failed to set value. See logs.");
+                    }
                     manager.MarkConfigDirty(configType);
                     return TextCommandResult.Success($"Set value {value} to {args.SubCmdCode}");
                 }

@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using CommonLib.Utils;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Datastructures;
@@ -95,17 +97,104 @@ namespace CommonLib.Extensions
 
         public static void ImportToWorldEdit(this BlockSchematic schematic, IServerPlayer player)
         {
-            var api = player.Entity.Api;
+            if (player == null)
+            {
+                const string message = "SchematicExtensions.ImportToWorldEdit: player is null.";
+                CommonLibLogger.Error(message);
+                throw new ArgumentNullException(nameof(player), message);
+            }
+
+            var api = player.Entity?.Api;
+            if (api == null)
+            {
+                var message = $"SchematicExtensions.ImportToWorldEdit: player API not available. PlayerUID={player.PlayerUID ?? "null"}";
+                CommonLibLogger.Error(message);
+                throw new InvalidOperationException(message);
+            }
+
+            if (schematic == null)
+            {
+                var message = $"SchematicExtensions.ImportToWorldEdit: schematic is null. PlayerUID={player.PlayerUID ?? "null"}";
+                api.Logger.Error(message);
+                throw new ArgumentNullException(nameof(schematic), message);
+            }
+
             var worldEdit = api.ModLoader.GetModSystem<WorldEdit>();
-            if (WorldEdit.CanUseWorldEdit(player, true))
+            if (worldEdit == null)
+            {
+                var message = $"SchematicExtensions.ImportToWorldEdit: WorldEdit ModSystem not found. PlayerUID={player.PlayerUID ?? "null"}";
+                api.Logger.Error(message);
+                throw new InvalidOperationException(message);
+            }
+
+            bool canUseWorldEdit;
+            try
+            {
+                canUseWorldEdit = WorldEdit.CanUseWorldEdit(player, true);
+            }
+            catch (Exception e)
+            {
+                var message = $"SchematicExtensions.ImportToWorldEdit: WorldEdit.CanUseWorldEdit failed. PlayerUID={player.PlayerUID ?? "null"}";
+                api.Logger.Error(message);
+                api.Logger.Error(e);
+                throw new InvalidOperationException(message, e);
+            }
+
+            if (canUseWorldEdit)
             {
                 var clipboardBlockDataField = typeof(WorldEditWorkspace).GetField("clipboardBlockData", BindingFlags.Instance | BindingFlags.NonPublic);
-                var workSpace = worldEdit.GetWorkSpace(player.PlayerUID);
-                clipboardBlockDataField?.SetValue(workSpace, schematic);
+                if (clipboardBlockDataField == null)
+                {
+                    const string message = "SchematicExtensions.ImportToWorldEdit: WorldEditWorkspace.clipboardBlockData field not found.";
+                    api.Logger.Error(message);
+                    throw new MissingFieldException(message);
+                }
+
+                WorldEditWorkspace workSpace;
+                try
+                {
+                    workSpace = worldEdit.GetWorkSpace(player.PlayerUID);
+                }
+                catch (Exception e)
+                {
+                    var message = $"SchematicExtensions.ImportToWorldEdit: failed to get WorldEdit workspace. PlayerUID={player.PlayerUID ?? "null"}";
+                    api.Logger.Error(message);
+                    api.Logger.Error(e);
+                    throw new InvalidOperationException(message, e);
+                }
+
+                if (workSpace == null)
+                {
+                    var message = $"SchematicExtensions.ImportToWorldEdit: WorldEdit workspace is null. PlayerUID={player.PlayerUID ?? "null"}";
+                    api.Logger.Error(message);
+                    throw new InvalidOperationException(message);
+                }
+
+                try
+                {
+                    clipboardBlockDataField.SetValue(workSpace, schematic);
+                }
+                catch (Exception e)
+                {
+                    var message = $"SchematicExtensions.ImportToWorldEdit: failed to set clipboardBlockData. PlayerUID={player.PlayerUID ?? "null"}";
+                    api.Logger.Error(message);
+                    api.Logger.Error(e);
+                    throw new InvalidOperationException(message, e);
+                }
 
                 var caller = new Caller() { Player = player };
-                api.ChatCommands.ExecuteUnparsed("/we tool import", new TextCommandCallingArgs() { Caller = caller });
-                api.ChatCommands.ExecuteUnparsed("/we imc", new TextCommandCallingArgs() { Caller = caller });
+                try
+                {
+                    api.ChatCommands.ExecuteUnparsed("/we tool import", new TextCommandCallingArgs() { Caller = caller });
+                    api.ChatCommands.ExecuteUnparsed("/we imc", new TextCommandCallingArgs() { Caller = caller });
+                }
+                catch (Exception e)
+                {
+                    var message = $"SchematicExtensions.ImportToWorldEdit: failed to execute WorldEdit import commands. PlayerUID={player.PlayerUID ?? "null"}";
+                    api.Logger.Error(message);
+                    api.Logger.Error(e);
+                    throw new InvalidOperationException(message, e);
+                }
             }
         }
     }

@@ -15,6 +15,11 @@ namespace CommonLib.UI
 
         private float _circleAlpha = 0.0F;
         private float _circleProgress = 0.0F;
+        private bool _invalidSettingsLogged = false;
+        private float _lastProgress = float.NaN;
+        private int _lastMaxSteps;
+        private float _lastOuterRadius;
+        private float _lastInnerRadius;
 
         public bool CircleVisible { get; set; }
 
@@ -41,6 +46,17 @@ namespace CommonLib.UI
 
         private void UpdateCirceMesh(float progress)
         {
+            ValidateSettings();
+
+            if (_circleMesh != null &&
+                progress == _lastProgress &&
+                Settings.MaxSteps == _lastMaxSteps &&
+                Settings.OuterRadius == _lastOuterRadius &&
+                Settings.InnerRadius == _lastInnerRadius)
+            {
+                return;
+            }
+
             var ringSize = (float)Settings.InnerRadius / Settings.OuterRadius;
             var stepSize = 1.0F / Settings.MaxSteps;
 
@@ -65,6 +81,35 @@ namespace CommonLib.UI
 
             if (_circleMesh is not null) Api.Render.UpdateMesh(_circleMesh, data);
             else _circleMesh = Api.Render.UploadMesh(data);
+
+            _lastProgress = progress;
+            _lastMaxSteps = Settings.MaxSteps;
+            _lastOuterRadius = Settings.OuterRadius;
+            _lastInnerRadius = Settings.InnerRadius;
+        }
+
+        private void ValidateSettings()
+        {
+            if (Settings.MaxSteps <= 0)
+            {
+                ThrowInvalidSettings("HudCircleRenderer.UpdateCircleMesh: MaxSteps must be > 0 (MaxSteps={0}).", Settings.MaxSteps);
+            }
+            if (Settings.OuterRadius == 0)
+            {
+                ThrowInvalidSettings("HudCircleRenderer.UpdateCircleMesh: OuterRadius must be != 0 (OuterRadius={0}).", Settings.OuterRadius);
+            }
+        }
+
+        private void ThrowInvalidSettings(string format, params object[] args)
+        {
+            var message = string.Format(format, args);
+            if (_invalidSettingsLogged)
+            {
+                throw new InvalidOperationException(message);
+            }
+            _invalidSettingsLogged = true;
+            Api.Logger.Error(message);
+            throw new InvalidOperationException(message);
         }
 
         // IRenderer implementation

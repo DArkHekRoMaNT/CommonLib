@@ -12,7 +12,12 @@ namespace CommonLib.Config
     {
         public override bool Check(ICoreAPI api, IComparable value)
         {
-            return Privilege.AllCodes().Contains((string)value);
+            if (value is not string code)
+            {
+                api.Logger.Error("PrivilegesAttribute.Check: expected string, got {0}.", value?.GetType().FullName ?? "null");
+                return false;
+            }
+            return Privilege.AllCodes().Contains(code);
         }
 
         public override string GetDescription(ICoreAPI api)

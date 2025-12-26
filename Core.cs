@@ -1,4 +1,5 @@
 using CommonLib.Commands;
+using CommonLib.Utils;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 
@@ -6,6 +7,11 @@ namespace CommonLib
 {
     public class Core : ModSystem
     {
+        public override void StartPre(ICoreAPI api)
+        {
+            CommonLibLogger.Logger = Mod?.Logger ?? api.Logger;
+        }
+
         public override void Start(ICoreAPI api)
         {
             api.ChatCommands

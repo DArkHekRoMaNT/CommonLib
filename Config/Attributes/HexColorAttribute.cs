@@ -11,7 +11,11 @@ namespace CommonLib.Config
     {
         public override bool Check(ICoreAPI api, IComparable value)
         {
-            string hexStr = (string)value;
+            if (value is not string hexStr)
+            {
+                api.Logger.Error("HexColorAttribute.Check: expected string, got {0}.", value?.GetType().FullName ?? "null");
+                return false;
+            }
 
             if (!hexStr.StartsWith("#") || hexStr.Length != 7)
             {

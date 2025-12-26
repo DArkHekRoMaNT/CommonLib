@@ -14,23 +14,30 @@ namespace CommonLib.Config
 {
     internal static class ConfigUtil
     {
+        private static readonly object ConfigPropertyCacheLock = new();
+        private static readonly Dictionary<Type, ConfigPropertyMeta[]> ConfigPropertyCache = new();
+        private static readonly Type JsonConfigValueObjectType = typeof(JsonConfigValue<>).MakeGenericType(typeof(object));
+        private static readonly PropertyInfo JsonConfigDescriptionProperty = JsonConfigValueObjectType.GetProperty(nameof(JsonConfigValue<object>.Description))!;
+        private static readonly PropertyInfo JsonConfigLimitsProperty = JsonConfigValueObjectType.GetProperty(nameof(JsonConfigValue<object>.Limits))!;
+
         public static object LoadConfig(ICoreAPI api, Type type, ref object config, out int loadedVersion, ILogger logger)
         {
             var configAttr = type.GetCustomAttribute<ConfigAttribute>() ?? throw new ArgumentException($"{type} is not a config");
             var jsonConfig = api.LoadOrCreateConfig(configAttr.Filename, logger ?? api.Logger, new Dictionary<string, JsonConfigValue<object>>()) ?? [];
             var defaultConfig = Activator.CreateInstance(type);
-            var configProps = GetConfigProperties(type);
+            var configProps = GetConfigPropertyMeta(type);
 
             loadedVersion = -1;
             if (configAttr.Version != -1 &&
-                !configProps.Any(x => x.Name == "Version") &&
+                !configProps.Any(x => x.Property.Name == "Version") &&
                 jsonConfig.TryGetValue("Version", out var version))
             {
                 loadedVersion = (int)ConvertType(version.Value, typeof(int), -1);
             }
 
-            foreach (var prop in configProps)
+            foreach (var meta in configProps)
             {
+                var prop = meta.Property;
                 var defaultValue = prop.GetValue(defaultConfig);
                 if (jsonConfig.TryGetValue(prop.Name, out var element))
                 {
@@ -50,17 +57,17 @@ namespace CommonLib.Config
             var configAttr = type.GetCustomAttribute<ConfigAttribute>() ?? throw new ArgumentException($"{type} is not a config");
             var jsonConfig = new Dictionary<string, object>();
             var defaultConfig = Activator.CreateInstance(type);
-            var configProps = GetConfigProperties(type);
+            var configProps = GetConfigPropertyMeta(type);
 
-            if (configAttr.Version != -1 && !configProps.Any(x => x.Name == "Version"))
+            if (configAttr.Version != -1 && !configProps.Any(x => x.Property.Name == "Version"))
             {
-                var jsonItemType = typeof(JsonConfigValue<>).MakeGenericType(typeof(object));
-                var jsonItem = Activator.CreateInstance(jsonItemType, configAttr.Version, configAttr.Version)!;
+                var jsonItem = Activator.CreateInstance(JsonConfigValueObjectType, configAttr.Version, configAttr.Version)!;
                 jsonConfig.Add("Version", jsonItem);
             }
 
-            foreach (var prop in configProps)
+            foreach (var meta in configProps)
             {
+                var prop = meta.Property;
                 var value = prop.GetValue(config);
                 var defaultValue = prop.GetValue(defaultConfig);
 
@@ -70,18 +77,17 @@ namespace CommonLib.Config
                     defaultValue = defaultValueEnum.ToString();
                 }
 
-                var jsonItemType = typeof(JsonConfigValue<>).MakeGenericType(typeof(object));
-                var jsonItem = Activator.CreateInstance(jsonItemType, value, defaultValue)!;
-                var desc = jsonItemType.GetProperty(nameof(JsonConfigValue<object>.Description))!;
-                var limits = jsonItemType.GetProperty(nameof(JsonConfigValue<object>.Limits))!;
+                var jsonItem = Activator.CreateInstance(JsonConfigValueObjectType, value, defaultValue)!;
+                var desc = JsonConfigDescriptionProperty;
+                var limits = JsonConfigLimitsProperty;
 
-                var descAttr = prop.GetCustomAttribute<DescriptionAttribute>();
+                var descAttr = meta.Description;
                 if (descAttr != null)
                 {
                     desc.SetValue(jsonItem, descAttr.Text);
                 }
 
-                var checkerAttr = prop.GetCustomAttribute<ValueCheckerAttribute>();
+                var checkerAttr = meta.ValueChecker;
                 if (checkerAttr != null)
                 {
                     limits.SetValue(jsonItem, checkerAttr.GetDescription(api));
@@ -101,65 +107,67 @@ namespace CommonLib.Config
         {
             var defaultConfig = Activator.CreateInstance(type);
 
-            foreach (var prop in GetConfigProperties(type))
+            foreach (var meta in GetConfigPropertyMeta(type))
             {
-                var checkerAttr = prop.GetCustomAttribute<ValueCheckerAttribute>();
+                var checkerAttr = meta.ValueChecker;
                 if (checkerAttr != null)
                 {
-                    var value = prop.GetValue(config);
-                    if (!checkerAttr.Check(api, (IComparable)value))
+                    var prop = meta.Property;
+                    var valueObj = prop.GetValue(config);
+                    if (valueObj == null)
+                    {
+                        var defaultValue = prop.GetValue(defaultConfig);
+                        logger.Warning($"{type.FullName}.{prop.Name} value is null, set to default {defaultValue}");
+                        prop.SetValue(config, defaultValue);
+                        continue;
+                    }
+
+                    if (valueObj is not IComparable comparableValue)
+                    {
+                        var defaultValue = prop.GetValue(defaultConfig);
+                        logger.Warning($"{type.FullName}.{prop.Name} value {valueObj} is not comparable, set to default {defaultValue}");
+                        prop.SetValue(config, defaultValue);
+                        continue;
+                    }
+
+                    if (!checkerAttr.Check(api, comparableValue))
                     {
                         if (checkerAttr is RangeAttribute rangeAttr)
                         {
-                            var clampedValue = rangeAttr.ClampRange((IComparable)value);
-                            if (clampedValue != value)
+                            var clampedValue = rangeAttr.ClampRange(comparableValue);
+                            if (!Equals(clampedValue, comparableValue))
                             {
-                                logger.Warning($"{type.FullName}.{prop.Name} value {value} out of bounds, set to {clampedValue}");
+                                logger.Warning($"{type.FullName}.{prop.Name} value {comparableValue} out of bounds, set to {clampedValue}");
                             }
                             prop.SetValue(config, clampedValue);
                         }
                         else
                         {
                             var defaultValue = prop.GetValue(defaultConfig);
-                            logger.Warning($"{type.FullName}.{prop.Name} value {value} unlimited, set to default {defaultValue}");
+                            logger.Warning($"{type.FullName}.{prop.Name} value {comparableValue} unlimited, set to default {defaultValue}");
                             prop.SetValue(config, defaultValue);
                         }
                     }
-
                 }
             }
         }
 
         public static IEnumerable<PropertyInfo> GetConfigProperties(Type type)
         {
-            var configAttr = type.GetCustomAttribute<ConfigAttribute>() ?? throw new ArgumentException($"{type} is not a config");
-
-            foreach (var prop in type.GetProperties())
+            foreach (var meta in GetConfigPropertyMeta(type))
             {
-                if (configAttr.UseAllPropertiesByDefault)
-                {
-                    if (prop.GetCustomAttribute<ConfigIgnoreAttribute>() == null)
-                    {
-                        yield return prop;
-                    }
-                }
-                else
-                {
-                    if (prop.GetCustomAttribute<ConfigPropertyAttribute>() != null)
-                    {
-                        yield return prop;
-                    }
-                }
+                yield return meta.Property;
             }
         }
 
         public static byte[] SerializeServerPacket(object config)
         {
             var dict = new Dictionary<string, object>();
-            foreach (var prop in GetConfigProperties(config.GetType()))
+            foreach (var meta in GetConfigPropertyMeta(config.GetType()))
             {
-                if (prop.GetCustomAttribute<ClientOnlyAttribute>() == null)
+                if (!meta.ClientOnly)
                 {
+                    var prop = meta.Property;
                     dict.Add(prop.Name, prop.GetValue(config)!);
                 }
             }
@@ -171,8 +179,9 @@ namespace CommonLib.Config
         {
             var json = Encoding.UTF8.GetString(data);
             var dict = JsonConvert.DeserializeObject<Dictionary<string, object>>(json)!;
-            foreach (var prop in GetConfigProperties(config.GetType()))
+            foreach (var meta in GetConfigPropertyMeta(config.GetType()))
             {
+                var prop = meta.Property;
                 if (dict.TryGetValue(prop.Name, out var value))
                 {
                     prop.SetValue(config, ConvertType(value, prop.PropertyType, null));
@@ -189,6 +198,10 @@ namespace CommonLib.Config
                 {
                     var list = (IList)value;
                     var elementType = type.GetElementType();
+                    if (elementType == null)
+                    {
+                        throw new InvalidOperationException($"Array element type not found for {type}.");
+                    }
                     var convertedArray = Array.CreateInstance(elementType, list.Count);
                     for (int i = 0; i < list.Count; i++)
                     {
@@ -237,6 +250,59 @@ namespace CommonLib.Config
             public T Default { get; } = defaultValue;
 
             public T Value { get; } = value;
+        }
+
+        private sealed class ConfigPropertyMeta
+        {
+            public PropertyInfo Property { get; }
+            public DescriptionAttribute? Description { get; }
+            public ValueCheckerAttribute? ValueChecker { get; }
+            public bool ClientOnly { get; }
+
+            public ConfigPropertyMeta(PropertyInfo property)
+            {
+                Property = property;
+                Description = property.GetCustomAttribute<DescriptionAttribute>();
+                ValueChecker = property.GetCustomAttribute<ValueCheckerAttribute>();
+                ClientOnly = property.GetCustomAttribute<ClientOnlyAttribute>() != null;
+            }
+        }
+
+        private static ConfigPropertyMeta[] GetConfigPropertyMeta(Type type)
+        {
+            lock (ConfigPropertyCacheLock)
+            {
+                if (ConfigPropertyCache.TryGetValue(type, out var cached))
+                {
+                    return cached;
+                }
+            }
+
+            var configAttr = type.GetCustomAttribute<ConfigAttribute>() ?? throw new ArgumentException($"{type} is not a config");
+            var props = type.GetProperties();
+            var list = new List<ConfigPropertyMeta>(props.Length);
+
+            foreach (var prop in props)
+            {
+                bool include = configAttr.UseAllPropertiesByDefault
+                    ? prop.GetCustomAttribute<ConfigIgnoreAttribute>() == null
+                    : prop.GetCustomAttribute<ConfigPropertyAttribute>() != null;
+
+                if (!include)
+                {
+                    continue;
+                }
+
+                list.Add(new ConfigPropertyMeta(prop));
+            }
+
+            var meta = list.ToArray();
+            lock (ConfigPropertyCacheLock)
+            {
+                ConfigPropertyCache[type] = meta;
+            }
+
+            return meta;
         }
     }
 }

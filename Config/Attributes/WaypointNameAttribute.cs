@@ -8,9 +8,16 @@ namespace CommonLib.Config
 {
     public sealed class WaypointNameAttribute : ValueCheckerAttribute
     {
+        private static readonly Regex WaypointNumberPrefixRegex = new Regex("\\d+\\-", RegexOptions.Compiled);
+
         public override bool Check(ICoreAPI api, IComparable value)
         {
-            return GetWaypointIcons(api).Any(e => e == (string)value);
+            if (value is not string iconName)
+            {
+                api.Logger.Error("WaypointNameAttribute.Check: expected string, got {0}.", value?.GetType().FullName ?? "null");
+                return false;
+            }
+            return GetWaypointIcons(api).Any(e => e == iconName);
         }
 
         public override string GetDescription(ICoreAPI api)
@@ -20,13 +27,22 @@ namespace CommonLib.Config
 
         private static string[] GetWaypointIcons(ICoreAPI api)
         {
-            List<IAsset> icons = api.Assets.GetMany("textures/icons/worldmap/", null, loadAsset: false);
-            return icons.Select(e =>
+            List<IAsset> icons = api.Assets.GetMany("textures/icons/worldmap/", null, loadAsset: false) ?? [];
+            var names = new List<string>(icons.Count);
+            foreach (var icon in icons)
             {
-                string name = e.Name.Substring(0, e.Name.IndexOf("."));
-                name = Regex.Replace(name, "\\d+\\-", "");
-                return name;
-            }).ToArray();
+                string name = icon.Name;
+                int dotIndex = name.IndexOf(".");
+                if (dotIndex <= 0)
+                {
+                    api.Logger.Error("WaypointNameAttribute.GetWaypointIcons: invalid asset name '{0}' (missing extension).", name);
+                    continue;
+                }
+                name = name.Substring(0, dotIndex);
+                name = WaypointNumberPrefixRegex.Replace(name, "");
+                names.Add(name);
+            }
+            return names.ToArray();
         }
     }
 }

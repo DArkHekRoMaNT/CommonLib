@@ -6,6 +6,22 @@
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<VintageStoryRoot Condition="'$(VINTAGE_STORY)' != ''">$(VINTAGE_STORY)</VintageStoryRoot>
+		<VintageStoryGameDir Condition="'$(GameVersion)' != '' and Exists('$(VintageStoryRoot)/$(GameVersion)/VintagestoryAPI.dll')">$(VintageStoryRoot)/$(GameVersion)</VintageStoryGameDir>
+		<VintageStoryGameDir Condition="'$(VintageStoryGameDir)' == '' and Exists('$(VintageStoryRoot)/VintagestoryAPI.dll')">$(VintageStoryRoot)</VintageStoryGameDir>
+		<VintagestoryClientAssembly Condition="Exists('$(VintageStoryGameDir)/Vintagestory.dll')">$(VintageStoryGameDir)/Vintagestory.dll</VintagestoryClientAssembly>
+		<VintagestoryClientAssembly Condition="'$(VintagestoryClientAssembly)' == '' and Exists('$(VintageStoryGameDir)/Vintagestory.exe')">$(VintageStoryGameDir)/Vintagestory.exe</VintagestoryClientAssembly>
+		<VintagestoryClientAssembly Condition="'$(VintagestoryClientAssembly)' == '' and Exists('$(VintageStoryGameDir)/Vintagestory')">$(VintageStoryGameDir)/Vintagestory</VintagestoryClientAssembly>
+		<VintagestoryServerAssembly Condition="Exists('$(VintageStoryGameDir)/VintagestoryServer.dll')">$(VintageStoryGameDir)/VintagestoryServer.dll</VintagestoryServerAssembly>
+		<VintagestoryServerAssembly Condition="'$(VintagestoryServerAssembly)' == '' and Exists('$(VintageStoryGameDir)/VintagestoryServer.exe')">$(VintageStoryGameDir)/VintagestoryServer.exe</VintagestoryServerAssembly>
+		<VintagestoryServerAssembly Condition="'$(VintagestoryServerAssembly)' == '' and Exists('$(VintageStoryGameDir)/VintagestoryServer')">$(VintageStoryGameDir)/VintagestoryServer</VintagestoryServerAssembly>
+		<VintageStoryModsDir Condition="Exists('$(VintageStoryGameDir)/Mods')">$(VintageStoryGameDir)/Mods</VintageStoryModsDir>
+		<VintageStoryModsDir Condition="'$(VintageStoryModsDir)' == '' and Exists('$(VintageStoryRoot)/Mods')">$(VintageStoryRoot)/Mods</VintageStoryModsDir>
+		<VSCreativeModPath Condition="Exists('$(VintageStoryModsDir)/VSCreativeMod.dll')">$(VintageStoryModsDir)/VSCreativeMod.dll</VSCreativeModPath>
+		<VSEssentialsModPath Condition="Exists('$(VintageStoryModsDir)/VSEssentials.dll')">$(VintageStoryModsDir)/VSEssentials.dll</VSEssentialsModPath>
+	</PropertyGroup>
+
 	<!-- Warning settings -->
 	<PropertyGroup>
 		<WarningLevel>4</WarningLevel>
@@ -13,7 +29,116 @@
 		<NoWarn>CS1591</NoWarn>
 	</PropertyGroup>
 
+	<Target Name="ReadModXmlGameVersion" BeforeTargets="ResolveReferences" Condition="'$(GameVersion)' == '' and Exists('Mod.xml')">
+		<XmlPeek XmlInputPath="Mod.xml" Query="/Project/PropertyGroup/GameVersion/text()">
+			<Output TaskParameter="Result" PropertyName="GameVersion" />
+		</XmlPeek>
+	</Target>
+
+	<Target Name="ValidateVintageStoryPath" BeforeTargets="ResolveReferences" Condition="'$(VintageStoryRoot)' == ''">
+		<Error Text="VINTAGE_STORY environment variable is not set. Set it to your Vintage Story install root." />
+	</Target>
+
+	<Target Name="ValidateGameVersion" BeforeTargets="ResolveReferences" Condition="'$(GameVersion)' == ''">
+		<Error Text="GameVersion is not set. Define it in Mod.xml or pass /p:GameVersion=... to the build." />
+	</Target>
+
+	<Target Name="ValidateVintageStoryGameDir" BeforeTargets="ResolveReferences" Condition="'$(VintageStoryGameDir)' == ''">
+		<Error Text="Vintage Story install not found under VINTAGE_STORY. Set VINTAGE_STORY to the install root (or version folder) and ensure GameVersion points to an installed version." />
+	</Target>
+
+	<Target Name="ValidateVintageStoryAssemblies" BeforeTargets="ResolveReferences" Condition="'$(VintageStoryGameDir)' != ''">
+		<Error Condition="'$(VintagestoryClientAssembly)' == ''" Text="Vintagestory client assembly not found under $(VintageStoryGameDir)." />
+		<Error Condition="'$(VintagestoryServerAssembly)' == ''" Text="Vintagestory server assembly not found under $(VintageStoryGameDir)." />
+	</Target>
+
+	<Target Name="ValidateVintageStoryMods" BeforeTargets="ResolveReferences" Condition="'$(VintageStoryGameDir)' != ''">
+		<Error Condition="'$(VintageStoryModsDir)' == ''" Text="Vintage Story Mods folder not found under $(VintageStoryGameDir)." />
+		<Error Condition="'$(VSCreativeModPath)' == ''" Text="VSCreativeMod.dll not found under $(VintageStoryModsDir)." />
+		<Error Condition="'$(VSEssentialsModPath)' == ''" Text="VSEssentials.dll not found under $(VintageStoryModsDir)." />
+	</Target>
+
 	<ItemGroup>
 		<PackageReference Include="Nullable" Version="1.3.1" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(VintageStoryGameDir)' != ''">
+		<Reference Include="VintagestoryAPI">
+			<HintPath>$(VintageStoryGameDir)/VintagestoryAPI.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="VintagestoryLib">
+			<HintPath>$(VintageStoryGameDir)/VintagestoryLib.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="VintagestoryServer">
+			<HintPath>$(VintagestoryServerAssembly)</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Vintagestory">
+			<HintPath>$(VintagestoryClientAssembly)</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<PropertyGroup Condition="'$(VintageStoryGameDir)' != ''">
+		<HarmonyLibPath Condition="Exists('$(VintageStoryGameDir)/0Harmony.dll')">$(VintageStoryGameDir)/0Harmony.dll</HarmonyLibPath>
+		<HarmonyLibPath Condition="'$(HarmonyLibPath)' == '' and Exists('$(VintageStoryGameDir)/HarmonyLib.dll')">$(VintageStoryGameDir)/HarmonyLib.dll</HarmonyLibPath>
+		<HarmonyLibPath Condition="'$(HarmonyLibPath)' == '' and Exists('$(VintageStoryGameDir)/Lib/0Harmony.dll')">$(VintageStoryGameDir)/Lib/0Harmony.dll</HarmonyLibPath>
+		<HarmonyLibPath Condition="'$(HarmonyLibPath)' == '' and Exists('$(VintageStoryGameDir)/Lib/HarmonyLib.dll')">$(VintageStoryGameDir)/Lib/HarmonyLib.dll</HarmonyLibPath>
+
+		<NewtonsoftJsonPath Condition="Exists('$(VintageStoryGameDir)/Newtonsoft.Json.dll')">$(VintageStoryGameDir)/Newtonsoft.Json.dll</NewtonsoftJsonPath>
+		<NewtonsoftJsonPath Condition="'$(NewtonsoftJsonPath)' == '' and Exists('$(VintageStoryGameDir)/Lib/Newtonsoft.Json.dll')">$(VintageStoryGameDir)/Lib/Newtonsoft.Json.dll</NewtonsoftJsonPath>
+
+		<ProtobufNetPath Condition="Exists('$(VintageStoryGameDir)/protobuf-net.dll')">$(VintageStoryGameDir)/protobuf-net.dll</ProtobufNetPath>
+		<ProtobufNetPath Condition="'$(ProtobufNetPath)' == '' and Exists('$(VintageStoryGameDir)/Lib/protobuf-net.dll')">$(VintageStoryGameDir)/Lib/protobuf-net.dll</ProtobufNetPath>
+	</PropertyGroup>
+
+	<Target Name="ValidateVintageStoryDependencies" BeforeTargets="ResolveReferences" Condition="'$(VintageStoryGameDir)' != ''">
+		<Error Condition="'$(HarmonyLibPath)' == ''" Text="Harmony not found. Expected 0Harmony.dll or HarmonyLib.dll under $(VintageStoryGameDir) or $(VintageStoryGameDir)/Lib." />
+		<Error Condition="'$(NewtonsoftJsonPath)' == ''" Text="Newtonsoft.Json.dll not found under $(VintageStoryGameDir) or $(VintageStoryGameDir)/Lib." />
+		<Error Condition="'$(ProtobufNetPath)' == ''" Text="protobuf-net.dll not found under $(VintageStoryGameDir) or $(VintageStoryGameDir)/Lib." />
+	</Target>
+
+	<ItemGroup Condition="'$(HarmonyLibPath)' != ''">
+		<Reference Include="0Harmony">
+			<HintPath>$(HarmonyLibPath)</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(NewtonsoftJsonPath)' != ''">
+		<Reference Include="Newtonsoft.Json">
+			<HintPath>$(NewtonsoftJsonPath)</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(ProtobufNetPath)' != ''">
+		<Reference Include="protobuf-net">
+			<HintPath>$(ProtobufNetPath)</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(VSCreativeModPath)' != ''">
+		<Reference Include="VSCreativeMod">
+			<HintPath>$(VSCreativeModPath)</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(VSEssentialsModPath)' != ''">
+		<Reference Include="VSEssentials">
+			<HintPath>$(VSEssentialsModPath)</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="ref/**" />
+		<EmbeddedResource Remove="ref/**" />
+		<None Remove="ref/**" />
+		<Content Remove="ref/**" />
 	</ItemGroup>
 </Project>

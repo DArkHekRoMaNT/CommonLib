@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Vintagestory.API.Client;
 
@@ -7,6 +8,13 @@ namespace CommonLib.Utils
     {
         public static MeshData GetRectangle(float totalSize, int gridSize)
         {
+            if (gridSize <= 0)
+            {
+                var message = $"DarkMeshUtil.GetRectangle: gridSize must be > 0 (gridSize={gridSize}, totalSize={totalSize}).";
+                CommonLibLogger.Error(message);
+                throw new ArgumentOutOfRangeException(nameof(gridSize), gridSize, message);
+            }
+
             var quadSize = totalSize / gridSize;
             var halfSize = totalSize / 2.0f;
 

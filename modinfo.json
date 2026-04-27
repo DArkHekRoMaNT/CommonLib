@@ -1,0 +1,14 @@
+{
+  "$schema": "https://moddbcdn.vintagestory.at/schema/modinfo.latest.json",
+  "type": "Code",
+  "name": "CommonLib",
+  "modid": "commonlib",
+  "version": "2.8.1",
+  "authors": [
+    "DArkHekRoMaNT"
+  ],
+  "requiredOnServer": false,
+  "dependencies": {
+    "game": "1.22.0"
+  }
+}

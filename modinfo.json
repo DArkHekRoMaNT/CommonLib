@@ -1,0 +1,15 @@
+{
+    "$schema": "https://moddbcdn.vintagestory.at/schema/modinfo.latest.json",
+    "type": "code",
+    "modid": "commonlib",
+    "name": "CommonLib",
+    "version": "2.8.1",
+    "description": "Library for PlayerCorpse, TpNet and other mods",
+    "authors": ["DArkHekRoMaNT"],
+    "side": "Universal",
+    "requiredOnClient": true,
+    "requiredOnServer": false,
+    "dependencies": {
+        "game": "1.22.0"
+    }
+}

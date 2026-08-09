@@ -107,11 +107,11 @@ namespace CommonLib.Config
                 if (checkerAttr != null)
                 {
                     var value = prop.GetValue(config);
-                    if (!checkerAttr.Check(api, (IComparable)value))
+                    if (!checkerAttr.Check(api, (IComparable)value!))
                     {
                         if (checkerAttr is RangeAttribute rangeAttr)
                         {
-                            var clampedValue = rangeAttr.ClampRange((IComparable)value);
+                            var clampedValue = rangeAttr.ClampRange((IComparable)value!);
                             if (clampedValue != value)
                             {
                                 logger.Warning($"{type.FullName}.{prop.Name} value {value} out of bounds, set to {clampedValue}");
@@ -188,7 +188,7 @@ namespace CommonLib.Config
                 if (type.IsArray)
                 {
                     var list = (IList)value;
-                    var elementType = type.GetElementType();
+                    var elementType = type.GetElementType()!;
                     var convertedArray = Array.CreateInstance(elementType, list.Count);
                     for (int i = 0; i < list.Count; i++)
                     {

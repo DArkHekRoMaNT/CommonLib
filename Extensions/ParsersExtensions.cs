@@ -68,7 +68,7 @@ namespace CommonLib.Extensions
                 return api.World.AllPlayers.Select((IPlayer p) => p.PlayerName).ToArray();
             }
 
-            public override object? GetValue()
+            public override object GetValue()
             {
                 return player;
             }

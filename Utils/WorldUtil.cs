@@ -13,7 +13,7 @@ namespace CommonLib.Utils
         /// </summary>
         public static CollectibleObject GetCollectibleObject(this IWorldAccessor world, AssetLocation code)
         {
-            return (CollectibleObject)world.GetItem(code) ?? world.GetBlock(code);
+            return (CollectibleObject?)world.GetItem(code) ?? world.GetBlock(code)!;
         }
 
         /// <summary>
